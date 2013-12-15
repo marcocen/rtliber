@@ -1047,6 +1047,7 @@ string then that will be the name of the new buffer."
   ;; setup stage (invisible to user)
   (with-current-buffer rt-liber-browser-buffer
     (let ((inhibit-read-only t))
+      (rt-liber-browser-mode)
       (goto-char (point-min))
       (rt-liber-ticketlist-browser-redraw nil query)
       (newline 2)
