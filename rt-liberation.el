@@ -179,6 +179,28 @@ The custom field symbols provide the programmer with a consistent
 way of referring to certain custom fields. The custom field
 strings are the server specific strings.")
 
+(defvar rt-liber-debug-log-enable nil
+  "If t then enable logging of communication to a buffer.
+
+Careful! This might create a sizable buffer.")
+
+(defvar rt-liber-debug-log-buffer-name "*rt-liber debug log*"
+  "Name of debug log buffer.")
+
+
+;;; --------------------------------------------------------
+;;; Debug log
+;;; --------------------------------------------------------
+
+(defun rt-liber-debug-log-write (str)
+  "Write STR to debug log."
+  (when (not (stringp str))
+    (error "must be a string"))
+  (with-current-buffer (get-buffer-create
+			rt-liber-debug-log-buffer-name)
+    (goto-char (point-max))
+    (insert str)))
+
 
 ;;; --------------------------------------------------------
 ;;; TicketSQL compiler
@@ -314,6 +336,9 @@ AFTER  date after predicate."
   (with-temp-buffer
     (insert answer-string)
     (goto-char (point-min))
+    (when rt-liber-debug-log-enable
+      (rt-liber-debug-log-write (buffer-substring (point-min)
+						  (point-max))))
     (funcall parser-f)))
 
 
