@@ -88,7 +88,7 @@ Ticket Browser
 * Ticket Browser Display::      How tickets are displayed in the browser.
 * Ticket Browser Sorting::      How tickets are sorted in the browser.
 * Ticket Browser Filtering::    How to filter tickets out of the browser.
-* Mutliple Ticket Browsers::    More than one ticket browser buffer.
+* Multiple Ticket Browsers::    More than one ticket browser buffer.
 
 @end detailmenu
 @end menu
@@ -349,7 +349,7 @@ example:
 @end lisp
 
 
-Sine the return value of the query compiler is just a TicketSQL
+Since the return value of the query compiler is just a TicketSQL
 string, the following is equivalent:
 
 @lisp
@@ -441,7 +441,7 @@ Move the ticket to a different queue.
 * Ticket Browser Display::      How tickets are displayed in the browser.
 * Ticket Browser Sorting::      How tickets are sorted in the browser.
 * Ticket Browser Filtering::    How to filter tickets out of the browser.
-* Mutliple Ticket Browsers::    More than one ticket browser buffer.
+* Multiple Ticket Browsers::    More than one ticket browser buffer.
 @end menu
 
 
@@ -613,8 +613,8 @@ Then we assign that function to be our default filtering function:
 @c -------------------------------------------------------------------
 
 
-@node Mutliple Ticket Browsers
-@section Mutliple Ticket Browsers
+@node Multiple Ticket Browsers
+@section Multiple Ticket Browsers
 
 @cindex ticket browser multiple buffer
 
@@ -669,7 +669,7 @@ The ticket viewer provides key-bindings to help compose emails to send
 to the RT email interface. The key-bindings for composing email
 described below are generic, what actually happens when you invoke
 them depends on the email-backend system you have installed into
-rt-liberation. @file{rt-liberation-gnus.el} provides integrations with
+rt-liberation. @file{rt-liberation-gnus.el} provides integration with
 Gnus, @xref{Gnus Integration}.
 
 Setting @var{rt-liber-jump-to-latest} to `t' will cause the viewer to
