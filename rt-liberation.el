@@ -1202,14 +1202,28 @@ If FIELD already exists, update to VALUE."
   (rt-liber-command-set-status
    id (rt-liber-command-get-status-string 'open)))
 
+;; This is brittle because the server doesn't respond with a code but
+;; with some free text, and we have no guarantee that the text will be
+;; stable from version to version.
+(defun rt-liber-handle-response-set-owner (response)
+  "Handle the response from the RT server. Pass on the response."
+  (when
+      (with-temp-buffer
+	(insert response)
+	(goto-char (point-min))
+	(re-search-forward "That user does not exist" (point-max) t))
+    (error "that user does not exist"))
+  response)
+
 (defun rt-liber-command-set-owner (id owner)
   "Set the owner of ticket ID to OWNER."
   (let ((command (rt-liber-command-get-command-string 'edit))
 	(args
 	 (format "ticket/%s set owner=%s" id owner)))
-    (rt-liber-parse-answer
-     (rt-liber-command-runner command args)
-     'rt-liber-command-runner-parser-f)))
+    (rt-liber-handle-response-set-owner
+     (rt-liber-parse-answer
+      (rt-liber-command-runner command args)
+      'rt-liber-command-runner-parser-f))))
 
 (defun rt-liber-command-set-queue (id queue)
   "Set the queue of ticket ID to QUEUE."
