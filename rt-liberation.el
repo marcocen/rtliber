@@ -1,7 +1,7 @@
 ;;; rt-liberation.el --- Free from RT
 
-;; Copyright (C) 2008, 2009, 2010, 2011 Yoni Rabkin, Aaron S. Hawley,
-;; John Sullivan
+;; Copyright (C) 2008, 2009, 2010, 2011, 2014 Yoni Rabkin, Aaron
+;; S. Hawley, John Sullivan
 ;;
 ;; Authors: Yoni Rabkin <yonirabkin@member.fsf.org>, Aaron S. Hawley
 ;; <aaron.s.hawley@gmail.com>, John Sullivan <johnsu01@wjsullivan.net>
