@@ -187,6 +187,15 @@ Careful! This might create a sizable buffer.")
 (defvar rt-liber-debug-log-buffer-name "*rt-liber debug log*"
   "Name of debug log buffer.")
 
+(defvar rt-liber-ticket-local nil
+  "Buffer local storage for a ticket.
+
+This variable is made buffer local for the ticket history")
+
+(defvar rt-liber-assoc-browser nil
+  "Browser associated with a ticket history.
+
+This variable is made buffer local for the ticket history")
 
 ;;; --------------------------------------------------------
 ;;; Debug log
@@ -585,8 +594,6 @@ AFTER  date after predicate."
        'rt-liber-refresh-ticket-history)
   (set (make-local-variable 'buffer-stale-function)
        (lambda (&optional noconfirm) 'slow))
-  (set (make-local-variable 'auto-revert-interval)
-       (* 15 60)) ;; 15 minutes
   (when rt-liber-jump-to-latest
     (rt-liber-jump-to-latest-correspondence))
   (run-hooks 'rt-liber-viewer-hook))
@@ -854,6 +861,7 @@ If POINT is nil then called on (point)."
 	  (recenter-top-bottom))
       (error "ticket #%s not found" id))))
 
+
 ;;; --------------------------------------------------------
 ;;; Ticket browser sorting
 ;;; --------------------------------------------------------
@@ -1048,8 +1056,6 @@ string then that will be the name of the new buffer."
        'rt-liber-browser-refresh)
   (set (make-local-variable 'buffer-stale-function)
        (lambda (&optional noconfirm) 'slow))
-  (set (make-local-variable 'auto-revert-interval)
-       (* 15 60)) ;; 15 minutes
   (run-hooks 'rt-liber-browser-hook))
 
 (defun rt-liber-setup-browser-name (new)
@@ -1310,6 +1316,7 @@ If FIELD already exists, update to VALUE."
 	    (rt-liber-command-set-owner id rt-liber-username)
 	    (rt-liber-refresh-ticket-history)))
       (error "no ticket currently in view"))))
+
 
 (provide 'rt-liberation)
 

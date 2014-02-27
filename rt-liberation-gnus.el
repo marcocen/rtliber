@@ -1,8 +1,8 @@
 ;;; rt-liberation-gnus.el --- Gnus integration for rt-liberation
 
-;; Copyright (C) 2009, 2012 Yoni Rabkin
+;; Copyright (C) 2009, 2012, 2014 Yoni Rabkin
 ;;
-;; Authors: Yoni Rabkin <yonirabkin@member.fsf.org>
+;; Authors: Yoni Rabkin <yrk@gnu.org>
 ;;
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -223,7 +223,9 @@ OPTIONS association list of options.
   (let ((match (match-string-no-properties 1)))
     (when (not match)
       (error "no ticket number found in subject line"))
-    (rt-liber-display-ticket match)))
+    (rt-liber-browse-query
+     (rt-liber-compile-query
+      (id match)))))
 
 (provide 'rt-liberation-gnus)
 

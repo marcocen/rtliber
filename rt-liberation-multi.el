@@ -1,8 +1,8 @@
 ;;; rt-liberation-multi.el --- Free from RT
 
-;; Copyright (C) 2010 Yoni Rabkin
+;; Copyright (C) 2010, 2014 Yoni Rabkin
 ;;
-;; Authors: Yoni Rabkin <yonirabkin@member.fsf.org>
+;; Authors: Yoni Rabkin <yrk@gnu.org>
 ;;
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -31,7 +31,8 @@
     (((type tty) (class mono))
      (:inverse-video t))
     (t (:background "Red")))
-  "Face for marked tickets in browser buffer.")
+  "Face for marked tickets in browser buffer."
+  :group 'rt-liberation)
 
 (defvar rt-liber-marked-tickets nil
   "Marked tickets (becomes ticket-browser buffer local).")
