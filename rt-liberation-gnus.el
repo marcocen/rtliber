@@ -136,7 +136,8 @@ OPTIONS association list of options.
        (with-temp-buffer
 	 (insert text)
 	 (goto-char (point-min))
-	 (replace-regexp "^[ ]+" "")
+	 (re-search-forward "^[ ]+" (point-max) t)
+	 (replace-match "")
 	 (whitespace-cleanup)
 	 (setq text (buffer-substring (point-min) (point-max)))))
      text)))

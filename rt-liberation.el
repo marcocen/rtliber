@@ -633,6 +633,28 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 
 ;; wrapper functions around specific functions provided by a backend
 
+(declare-function
+ rt-liber-gnus-compose-reply-to-requestor
+ "rt-liberation-gnus.el")
+(declare-function
+ rt-liber-gnus-compose-reply-to-requestor-to-this
+ "rt-liberation-gnus.el")
+(declare-function
+ rt-liber-gnus-compose-reply-to-requestor-verbatim-this
+ "rt-liberation-gnus.el")
+(declare-function
+ rt-liber-gnus-compose-provisional
+ "rt-liberation-gnus.el")
+(declare-function
+ rt-liber-gnus-compose-provisional-to-this
+ "rt-liberation-gnus.el")
+(declare-function
+ rt-liber-gnus-compose-comment
+ "rt-liberation-gnus.el")
+(declare-function
+ rt-liber-gnus-compose-comment-this
+ "rt-liberation-gnus.el")
+
 (defun rt-liber-viewer-answer ()
   "Answer the ticket."
   (interactive)
@@ -687,6 +709,10 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 ;;; Ticket browser
 ;;; --------------------------------------------------------
 
+(declare-function
+ rt-liber-get-ancillary-text
+ "rt-liberation-storage.el")
+
 ;; accept a ticket-alist object and return an alist mapping ticket
 ;; properties to format characters for use in `rt-liber-format'.
 (defun rt-liber-format-function (ticket-alist)
@@ -740,6 +766,9 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 			 '(face font-lock-comment-face)))
   (newline)
   (insert (rt-liber-format "    %o <== %R" ticket)))
+
+(declare-function rt-liber-ticket-marked-p
+		  "rt-liberation-multi.el")
 
 (defun rt-liber-ticketlist-browser-redraw (ticketlist &optional query)
   "Display TICKETLIST. Optionally display QUERY as well."
@@ -1013,6 +1042,10 @@ string then that will be the name of the new buffer."
 ;;; Major mode definitions
 ;;; --------------------------------------------------------
 
+(declare-function
+ rt-liber-multi-flag-as-spam-and-delete
+ "rt-liberation-multi.el")
+
 (defun rt-liber-multi-delete-spam ()
   "Delete marked tickets as spam."
   (interactive)
@@ -1106,6 +1139,8 @@ string then that will be the name of the new buffer."
   ;; display stage (user can see updates)
   (switch-to-buffer rt-liber-browser-buffer)
   (setq buffer-read-only t))
+
+(declare-function rt-liber-set-ancillary-text "rt-liberation-storage.el")
 
 (defun rt-liber-browser-ancillary-text ()
   "Wrapper function around storage backend."
