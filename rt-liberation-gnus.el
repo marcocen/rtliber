@@ -76,8 +76,9 @@ line of an email. For example: \\[company.com #\\([0-9].+?\\)\\]"
   :group 'rt-liber-gnus)
 
 (require 'rt-liberation)
+(require 'nnir)
+(require 'gnus-msg)
 
-(eval-when-compile (require 'gnus-msg))
 
 (defun rt-liber-gnus-compose (addr ticket-alist options)
   "Create a Gnus *mail* buffer for the RT email interface.
