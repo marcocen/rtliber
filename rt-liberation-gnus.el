@@ -114,7 +114,6 @@ OPTIONS association list of options.
       (insert rt-liber-gnus-signature)
       (newline))))
 
-;; fixme: test against both versions of the RT CLI
 (defun rt-liber-gnus-content-to-string ()
   "Return the current content section as a string"
   (rt-liber-gnus-with-ticket-buffer
@@ -124,23 +123,24 @@ OPTIONS association list of options.
 	(or (re-search-backward rt-liber-content-regexp (point-min) t)
 	    (re-search-forward rt-liber-content-regexp (point-max) t)))
      (error "no content sections found"))
-   (goto-char (point-at-bol))
-   (re-search-forward "^Content: " (point-at-eol) nil)
-   (let ((start (point))
-	 text)
-     (re-search-forward "^[[:alpha:]]+:" (point-max) t)
-     (forward-line -1)
-     (if (= (count-lines start (point)) 1)
-	 (error "empty content section")
+   (save-excursion
+     (goto-char (point-at-bol))
+     (re-search-forward "^Content: " (point-at-eol) nil)
+     (let ((start (point))
+	   text)
+       (re-search-forward "^[[:alpha:]]+:" (point-max) t)
+       (goto-char (point-at-bol))
+       (when (= 0 (length (buffer-substring-no-properties start (point))))
+	 (error "empty content section"))
        (setq text (buffer-substring-no-properties start (point)))
        (with-temp-buffer
 	 (insert text)
 	 (goto-char (point-min))
-	 (re-search-forward "^[ ]+" (point-max) t)
-	 (replace-match "")
+	 (while (re-search-forward "^[ ]+" (point-max) t)
+	   (replace-match ""))
 	 (whitespace-cleanup)
-	 (setq text (buffer-substring (point-min) (point-max)))))
-     text)))
+	 (setq text (buffer-substring (point-min) (point-max))))
+       text))))
 
 (defmacro rt-liber-gnus-with-ticket-buffer (&rest body)
   `(progn
