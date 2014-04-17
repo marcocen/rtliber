@@ -435,6 +435,11 @@ Scroll the text of the ticket browser downward.
 @findex rt-liber-browser-move
 Move the ticket to a different queue.
 
+@item P
+@kindex P (ticket browser)
+@findex rt-liber-browser-prioritize
+Set the numerical priority level of the ticket at point.
+
 @end table
 
 @menu
@@ -470,7 +475,8 @@ ID number of the ticket in the RT database.
 @item %s
 Subject line.
 @item %c
-Ticket creation time.
+Ticket creation time. The format to display the time is specified in
+the variable @var{rt-liber-browser-time-format-string}.
 @item %S
 Ticket status (``open'', ``new'' etc.)
 @item %r
@@ -483,6 +489,8 @@ Creator of the ticket.
 Owner of the ticket.
 @item %q
 The queue originating the ticket.
+@item %p
+The numerical priority of the ticket
 @end table
 
 Here is an example implementation of
@@ -505,7 +513,10 @@ would break the font-locking regular expressions.
   (insert (rt-liber-format "    %o <== %R" ticket)))
 @end lisp
 
-
+The function @dfn{rt-liber-high-priority-p} can be used to apply a
+different face or text to a ticket if it is high priority. A ticket is
+considered high priority if its value is strictly higher than
+@var{rt-liber-browser-priority-cutoff}
 
 
 
