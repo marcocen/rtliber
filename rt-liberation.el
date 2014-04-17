@@ -127,6 +127,9 @@ function returns a truth value.")
 (defvar rt-liber-query nil
   "Query structure (becomes ticket-browser buffer local).")
 
+(defvar rt-liber-browser-time-format-string "%b %d %Y %H:%M"
+  "String passed to `format-time-string' in the ticket browser.")
+
 (defface rt-liber-ticket-face
   '((((class color) (background dark))
      (:foreground "DarkSeaGreen"))
@@ -717,20 +720,23 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 ;; properties to format characters for use in `rt-liber-format'.
 (defun rt-liber-format-function (ticket-alist)
   "Return a pairing of TICKET-ALIST values to %-sequences."
-  (let* ((id (cdr (assoc "id" ticket-alist)))
-	 (subject (cdr (assoc "Subject" ticket-alist)))
-	 (status (cdr (assoc "Status" ticket-alist)))
-	 (created (cdr (assoc "Created" ticket-alist)))
-	 (resolved (cdr (assoc "Resolved" ticket-alist)))
+  (let* ((id         (rt-liber-ticket-id-only ticket-alist))
+	 (subject    (cdr (assoc "Subject" ticket-alist)))
+	 (status     (cdr (assoc "Status" ticket-alist)))
+	 (created    (format-time-string
+		      rt-liber-browser-time-format-string
+		      (date-to-time
+		       (cdr (assoc "Created" ticket-alist)))))
+	 (resolved   (cdr (assoc "Resolved" ticket-alist)))
 	 (requestors (cdr (assoc "Requestors" ticket-alist)))
-	 (creator (cdr (assoc "Creator" ticket-alist)))
-	 (owner (cdr (assoc "Owner" ticket-alist)))
-	 (queue (cdr (assoc "Queue" ticket-alist)))
-	 (anc (if rt-liber-anc-p
-		  (rt-liber-get-ancillary-text
-		   (rt-liber-ticket-id-only ticket-alist))
-		""))
-	 (priority (cdr (assoc "Priority" ticket-alist))))
+	 (creator    (cdr (assoc "Creator" ticket-alist)))
+	 (owner      (cdr (assoc "Owner" ticket-alist)))
+	 (queue      (cdr (assoc "Queue" ticket-alist)))
+	 (anc        (if rt-liber-anc-p
+			 (rt-liber-get-ancillary-text
+			  (rt-liber-ticket-id-only ticket-alist))
+		       ""))
+	 (priority   (cdr (assoc "Priority" ticket-alist))))
     (list (cons ?i (or id "N/A"))
 	  (cons ?s (or subject "N/A"))
 	  (cons ?c (or created "N/A"))
