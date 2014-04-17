@@ -729,7 +729,8 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 	 (anc (if rt-liber-anc-p
 		  (rt-liber-get-ancillary-text
 		   (rt-liber-ticket-id-only ticket-alist))
-		"")))
+		""))
+	 (priority (cdr (assoc "Priority" ticket-alist))))
     (list (cons ?i (or id "N/A"))
 	  (cons ?s (or subject "N/A"))
 	  (cons ?c (or created "N/A"))
@@ -739,7 +740,14 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 	  (cons ?C (or creator "N/A"))
 	  (cons ?o (or owner "N/A"))
 	  (cons ?q (or queue "N/A"))
-	  (cons ?A (or anc "")))))
+	  (cons ?A (or anc ""))
+	  (cons ?p (or priority "N/A")))))
+
+(defun rt-liber-browser-assoc (char alist)
+  "Process the %-sequence association."
+  (let ((v (cdr (assoc char alist))))
+    (cond ((eq char ?%) "%") ;; escape sequence for %
+	  (t (or v "")))))
 
 (defun rt-liber-format (format ticket-alist)
   "Substitute %-sequences in FORMAT."
