@@ -130,6 +130,9 @@ function returns a truth value.")
 (defvar rt-liber-browser-time-format-string "%b %d %Y %H:%M"
   "String passed to `format-time-string' in the ticket browser.")
 
+(defvar rt-liber-browser-priority-cutoff 0
+  "Tickets with a priority higher than this are high priority.")
+
 (defface rt-liber-ticket-face
   '((((class color) (background dark))
      (:foreground "DarkSeaGreen"))
@@ -139,6 +142,16 @@ function returns a truth value.")
      (:inverse-video t))
     (t (:background "Blue")))
   "Face for tickets in browser buffer.")
+
+(defface rt-liber-priority-ticket-face
+  '((((class color) (background dark))
+     (:foreground "Orange"))
+    (((class color) (background light))
+     (:foreground "Orange"))
+    (((type tty) (class mono))
+     (:inverse-video t))
+    (t (:background "Black")))
+  "Face for high priority tickets in browser buffer.")
 
 (defconst rt-liber-viewer-font-lock-keywords
   (let ((header-regexp (regexp-opt '("id: " "Ticket: " "TimeTaken: "
@@ -520,6 +533,15 @@ AFTER  date after predicate."
       (substring (cdr (assoc "id" ticket-alist)) 7)
     nil))
 
+(defun rt-liber-ticket-priority-only (ticket-alist)
+  "Return an integer value priority or NIL."
+  (if ticket-alist
+      (let ((p-str (cdr (assoc "Priority" ticket-alist))))
+	(if p-str
+	    (string-to-number p-str)
+	  nil))
+    nil))
+
 (defun rt-liber-viewer-visit-in-browser ()
   "Visit this ticket in the RT Web interface."
   (interactive)
@@ -755,6 +777,16 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
     (cond ((eq char ?%) "%") ;; escape sequence for %
 	  (t (or v "")))))
 
+(defun rt-liber-high-priority-p (ticket-alist)
+  "Return t if TICKET-ALIST is high priority.
+
+The ticket's priority is compared to the variable
+  `rt-liber-browser-priority-cutoff'."
+  (let ((p (rt-liber-ticket-priority-only ticket-alist)))
+    (if p
+	(< rt-liber-browser-priority-cutoff p)
+      nil)))
+
 (defun rt-liber-format (format ticket-alist)
   "Substitute %-sequences in FORMAT."
   (let ((alist (rt-liber-format-function ticket-alist)))
@@ -770,6 +802,14 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
   (add-text-properties (point-at-bol)
 		       (point-at-eol)
 		       '(face rt-liber-ticket-face))
+  (when (rt-liber-high-priority-p ticket)
+    (let ((p (point)))
+      (insert (format " HIGH PRIORITY (%d)"
+		      (rt-liber-ticket-priority-only ticket)))
+      (add-text-properties p
+			   (point-at-eol)
+			   '(face rt-liber-priority-ticket-face))))
+
   (newline)
   (insert (rt-liber-format "  [%o] %R: %s" ticket))
   (let ((p (point)))
@@ -1239,6 +1279,23 @@ If FIELD already exists, update to VALUE."
      (rt-liber-command-runner command args)
      'rt-liber-command-runner-parser-f)))
 
+(defun rt-liber-command-set-priority (id priority)
+  "Set ticket ID priority to be PRIORITY."
+  (let ((command (rt-liber-command-get-command-string 'edit))
+	(args
+	 (format "ticket/%s set priority=%s"
+		 id
+		 (if (= priority 0)
+		     ;; this is to work around a weird bug in RT
+		     ;; (3.8.8) in which the CLI command to set the
+		     ;; priority to 0 doesn't work, but sending 00
+		     ;; does
+		     "00"
+		   (format "%d" priority)))))
+    (rt-liber-parse-answer
+     (rt-liber-command-runner command args)
+     'rt-liber-command-runner-parser-f)))
+
 (defun rt-liber-command-set-status-deleted (id)
   "Set the status of ticket ID to `deleted'."
   (rt-liber-command-set-status
@@ -1285,6 +1342,14 @@ If FIELD already exists, update to VALUE."
     (rt-liber-parse-answer
      (rt-liber-command-runner command args)
      'rt-liber-command-runner-parser-f)))
+
+(defun rt-liber-browser-prioritize (n)
+  "Assigng current ticket priority N."
+  (interactive "nPriority (number): ")
+  (rt-liber-command-set-priority
+   (rt-liber-browser-ticket-id-at-point)
+   n)
+  (rt-liber-browser-refresh-and-return))
 
 (defun rt-liber-browser-assign (name)
   "Assign current ticket to a user NAME."
