@@ -1129,6 +1129,7 @@ string then that will be the name of the new buffer."
     (define-key map (kbd "DEL") 'scroll-down)
     (define-key map (kbd "m") 'rt-liber-browser-move)
     (define-key map (kbd "M") 'rt-liber-mark-ticket-at-point)
+    (define-key map (kbd "P") 'rt-liber-browser-prioritize)
     map)
   "Key map for ticket browser.")
 
