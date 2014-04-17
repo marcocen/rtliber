@@ -761,25 +761,22 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
     (replace-regexp-in-string
      "%."
      (lambda (str)
-       (let ((char (aref str 1)))
-	 (if (eq char ?%) "%"
-	   (or (cdr (assoc char alist)) ""))))
+       (rt-liber-browser-assoc (aref str 1) alist))
      format t t)))
 
 (defun rt-liber-ticketlist-browser-redraw-f (ticket)
   "Display TICKET."
-  (insert (rt-liber-format "[%c] %i" ticket))
+  (insert (rt-liber-format "[%c %i %S]" ticket))
   (add-text-properties (point-at-bol)
 		       (point-at-eol)
 		       '(face rt-liber-ticket-face))
   (newline)
-  (insert (rt-liber-format "    [%S] %s" ticket))
+  (insert (rt-liber-format "  [%o] %R: %s" ticket))
   (let ((p (point)))
     (insert (rt-liber-format "    %A" ticket))
     (add-text-properties p (point)
 			 '(face font-lock-comment-face)))
-  (newline)
-  (insert (rt-liber-format "    %o <== %R" ticket)))
+  (newline))
 
 (declare-function rt-liber-ticket-marked-p
 		  "rt-liberation-multi.el")
