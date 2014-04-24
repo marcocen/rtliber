@@ -63,9 +63,9 @@ Extensions
 
 Copying and license
 * Copying::                     The GNU General Public License gives you
-				permission to redistribute rt-liberation
-				on certain terms; it also explains that
-				there is no warranty.
+                                permission to redistribute rt-liberation
+                                on certain terms; it also explains that
+                                there is no warranty.
 
 * The GNU FDL::                 The license for this documentation.
 
@@ -127,25 +127,87 @@ operations on the ticket.
 
 @cindex dependencies
 
-rt-liberation has been tested exclusively on GNU/Emacs, with very
-recent versions.
+rt-liberation has been tested exclusively on GNU/Emacs.
 
-Since rt-liberation uses the command line interface as a backend to
-communicate with the RT server it will need a local copy of the RT
-software on the machine running rt-liberation. RT is available at
-@uref{http://bestpractical.com/rt/download.html}
+rt-liberation uses the RT command line interface (RT CLI) as a back-end
+to communicate with the RT server. rt-liberation will need a local
+copy of the RT software on the machine running rt-liberation. RT is
+available at @uref{http://bestpractical.com/rt/download.html}
 
-At the time of writing the recommended version of RT to use as a
-backend for rt-liberation is 3.8.2. Version 3.8.2 will provide
-shorter response times and less calls out to the server.
-
-Please check that the RT CLI runs from the shell and can communicate
-with the server in question. If that doesn't work neither will
-rt-liberation.
+@menu
+* RT CLI Setup::        Getting the RT Command Line Interface to work
+@end menu
 
 
 
 
+@node RT CLI Setup
+@section RT CLI Setup
+
+The following is a short description of how to get the RT CLI setup on
+the machine where rt-liberation will be running. It assumes a
+GNU/Linux distribution such as Trisquel @uref{http://trisquel.info/}.
+
+You need the address of the remote RT server (note whether it's an
+HTTP or HTTPS address), and the username and password for the user
+account on that server.
+
+Download a local copy of RT (version 4.2.3 happened to be extant at
+the time of writing).
+
+@example
+$ wget http://download.bestpractical.com/pub/rt/release/rt-4.2.3.tar.gz
+$ tar xzf rt-4.2.3.tar.gz
+@end example
+
+Navigate down to the ``bin'' directory and try to run the RT CLI.
+
+@example
+$ cd rt-4.2.3/bin
+$ ./rt
+@end example
+
+If you don't already have Perl LWP installed it will fail to run, in
+which case you have to satisfy this dependency. The following command
+should do it on a Trisquel GNU/Linux or similar system:
+
+@example
+sudo apt-get install liblwp-protocol-https-perl
+@end example
+
+Trying to run the RT CLI at this point should work, and you will be
+greeted by the friendly RT CLI prompt ``rt>''. Feel free to hit Ctrl-C
+at this point because while the RT CLI is running it is still
+unconfigured.
+
+The RT CLI looks for a file named ``.rtrc'' in your home directory, so
+create an ``~/.rtrc'' file and, using the information collected
+earlier, fill in the details.
+
+@example
+server https://rt.server.somewhere
+user USERNAME-ON-RT
+passwd PASSWORD-ON-RT
+@end example
+
+Now back to running the RT CLI we can enter a simple RT query to check
+the setup. If everything is set up correctly then the result will be a
+list of tickets.
+
+@example
+rt> ls "Queue=sprockets and Status=new"
+Ticket Owner Queue    Age   Told Status Requestor Subject
+--------------------------------------------------------------------------------
+==========  2 unowned tickets ==========
+   701       sproc  5 min        new    admin@@no. foo
+   702       sproc  4 min        new    john.foo@@ john's foo
+@end example
+
+At this point you know that rt-liberation has everything it needs to
+call into the server@footnote{Implementing rt-liberation in this way
+has the additional benefit of isolating the rt-liberation code
+somewhat from changes in the way the RT CLI communicates with the RT
+server.}.
 
 @c --------------------------------------------------
 
@@ -252,7 +314,7 @@ For example here is a query with both Boolean and LIKE tokens:
 @lisp
 (rt-liber-compile-query
     (and (queue "bugs")
-	 (content "gnu")))
+         (content "gnu")))
 
 ==> "Queue = 'bugs' AND Content LIKE 'gnu'"
 @end lisp
@@ -290,11 +352,11 @@ Here is a slightly more involved example to illustrate:
       (owner "me@@myaddress.com")
       (status "open")
       (lastupdated nil
-		   (format-time-string
-		     "%Y-%m-%d"
-		     (seconds-to-time
-		      (- (time-to-seconds (current-time))
-			 (* 60 60 24 7)))))))
+                   (format-time-string
+                     "%Y-%m-%d"
+                     (seconds-to-time
+                      (- (time-to-seconds (current-time))
+                         (* 60 60 24 7)))))))
 
 ==> "Queue = 'bugs' AND Owner = 'me@@myaddress.com' AND Status = 'open' AND LastUpdated > '2009-03-30'"
 @end lisp
@@ -310,7 +372,7 @@ in function calls:
   (rt-liber-browse-query
    (rt-liber-compile-query
     (and (queue "complaints")
-	 (id ticket-id)))))
+         (id ticket-id)))))
 @end lisp
 
 
@@ -345,7 +407,7 @@ example:
 (rt-liber-browse-query
  (rt-liber-compile-query
      (and (queue "bugs")
-	  (content "gnu")))
+          (content "gnu")))
 @end lisp
 
 
@@ -505,8 +567,8 @@ would break the font-locking regular expressions.
   "Display TICKET."
   (insert (rt-liber-format "[%c] %i" ticket))
   (add-text-properties (point-at-bol)
-		       (point-at-eol)
-		       '(face rt-liber-ticket-face))
+                       (point-at-eol)
+                       '(face rt-liber-ticket-face))
   (newline)
   (insert (rt-liber-format "    [%S] %s" ticket))
   (newline)
@@ -572,7 +634,7 @@ signaled).
    (rt-liber-sort-ticket-list
     ticket-list
     #'(lambda (a b)
-	(rt-liber-time-lessthan-p a b "Created")))))
+        (rt-liber-time-lessthan-p a b "Created")))))
 @end lisp
 
 @end defun
@@ -610,8 +672,8 @@ to be filtered.
 (defun rt-liber-browser-deleted-filter (ticket)
   (not
    (and ticket
-	(string= (cdr (assoc "Status" ticket))
-		 "deleted"))))
+        (string= (cdr (assoc "Status" ticket))
+                 "deleted"))))
 @end lisp
 
 Then we assign that function to be our default filtering function:
@@ -647,16 +709,16 @@ buffers will be created displaying the query results and named
   (rt-liber-browse-query
    (rt-liber-compile-query
     (and (queue "complaints")
-	 (owner "lem.e.tweakit")
-	 (status "open")
-	 (lastupdatedby "molly.manager")))
+         (owner "lem.e.tweakit")
+         (status "open")
+         (lastupdatedby "molly.manager")))
    "*updated by supervisor*")
 
   (rt-liber-browse-query
    (rt-liber-compile-query
     (and (queue "complaints")
-	 (owner "Nobody")
-	 (status "new")))
+         (owner "Nobody")
+         (status "new")))
    "*new tickets*"))
 @end lisp
 
@@ -807,7 +869,7 @@ variables followed by a more thorough description of the variables:
       rt-liber-gnus-address         "our-rtserver@@ourserver.org"
       rt-liber-gnus-subject-name    "ourserver.org"
       rt-liber-gnus-answer-headers  '(("Gcc" . "nnml:Send-Mail")
-				      ("X-Ethics" . "Use GNU"))
+                                      ("X-Ethics" . "Use GNU"))
       rt-liber-gnus-signature       "Kind Regards")
 @end lisp
 
