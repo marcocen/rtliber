@@ -63,6 +63,18 @@
 	    "format=i" "&"
 	    "orderby=+Created")))
 
+(defun rt-liber-rest-show-string (scheme url ticket-id-list username password query)
+  ""
+  (let ((user (url-encode-url username))
+	(pass (url-encode-url password)))
+    (concat scheme
+	    "://"
+	    url
+	    "/REST/1.0/ticket/" ticket-id-list
+	    "/show" "?"
+	    "user=" user "&"
+	    "pass=" pass "&")))
+
 (defun rt-liber-rest-call (url)
   ""
   (let ((url-request-method "POST"))
@@ -88,6 +100,22 @@
 				       rt-liber-rest-username
 				       rt-liber-rest-password
 				       query-string)))
+	;; The "show" API call doesn't support getting multiple
+	;; tickets at once. This is a problem. I've emailed the
+	;; rt-users mailing list asking how to to this.
+	;;
+	;; A much more insidious method to figure this out is to
+	;; wireshark the CLI connection as it asks for multiple
+	;; tickets and see if we can capture the query the CLI
+	;; uses. This would necessitate a non-HTTPS connection, such
+	;; that the one to the demo servers.
+	((string= op "show")
+	 (rt-liber-rest-show-string rt-liber-rest-scheme
+				    rt-liber-rest-url
+				    query-string
+				    rt-liber-rest-username
+				    rt-liber-rest-password
+				    query-string))
 	(t (error "unknown op [%s]" op))))
 
 (defun rt-liber-rest-parse-http-header ()
