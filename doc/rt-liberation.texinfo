@@ -862,15 +862,12 @@ loading rt-liberation:
 
 In order for rt-liberation-gnus to be useful a few variables need to
 be specialized. The following is example code which sets these
-variables followed by a more thorough description of the variables:
+variables. Below is a thorough description of those variables.
 
 @lisp
 (setq rt-liber-gnus-comment-address "our-rtserver-comment@@ourserver.org"
       rt-liber-gnus-address         "our-rtserver@@ourserver.org"
-      rt-liber-gnus-subject-name    "ourserver.org"
-      rt-liber-gnus-answer-headers  '(("Gcc" . "nnml:Send-Mail")
-                                      ("X-Ethics" . "Use GNU"))
-      rt-liber-gnus-signature       "Kind Regards")
+      rt-liber-gnus-subject-name    "ourserver.org")
 @end lisp
 
 @defopt
@@ -889,15 +886,27 @@ the beginning of the square brackets in the subject. The string is a
 part of the subject line which helps the RT server recognize the
 email.
 @end defopt
-@defopt
-@var{rt-liber-gnus-answer-headers} defines a list of dotted-pairs
-containing the header name and value for additional email headers.
-@end defopt
-@defopt
-A signature can be added automatically to the end of the email by
-setting @var{rt-liber-gnus-signature} to be some text. It is useful to
-include newlines in this text to make the signature format nicely.
-@end defopt
+
+Gnus posting styles controlled by @var{gnus-posting-styles} can be
+customized for rt-liberation-gnus by using the variable
+@var{rt-liber-gnus-p}, which is only non-nil when rt-liberation-gnus
+launches a Gnus message buffer.
+
+Here is example code which uses @var{rt-liber-gnus-p} to override the
+signature in the default posting style with one special to
+rt-liberation. Headers can be added and removed in a similar manner.
+
+@lisp
+(setq gnus-posting-styles
+        '((".*"
+           (name "Lemm E. Hackitt")
+           (address "Lemm@@hack.it")
+           (signature-file "~/sig.txt")
+           ("X-Ethics" "Use GNU"))
+          (rt-liber-gnus-p
+           (signature-file "~/rt-liber-sig.txt"))))
+@end lisp
+
 
 Once rt-liberation-gnus is loaded and customized the key-bindings in
 the Viewer will be able to call into it, @xref{Ticket Viewer}.
