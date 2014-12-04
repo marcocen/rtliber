@@ -45,11 +45,6 @@
   :type 'string
   :group 'rt-liber-gnus)
 
-(defcustom rt-liber-gnus-answer-headers nil
-  "*Alist of additional message headers."
-  :type 'list
-  :group 'rt-liber-gnus)
-
 (defcustom rt-liber-gnus-provisional-tag "PROVISIONAL"
   "*Subject line text for a provisional response."
   :type 'string
@@ -58,13 +53,6 @@
 (defcustom rt-liber-gnus-delayed-response-text
   "Please accept my apologies for the late reply."
   "*Text for a belated reply."
-  :type 'string
-  :group 'rt-liber-gnus)
-
-(defcustom rt-liber-gnus-signature
-  "--
-   Regards."
-  "Signature to append to email."
   :type 'string
   :group 'rt-liber-gnus)
 
@@ -80,6 +68,10 @@ line of an email. For example: \\[company.com #\\([0-9].+?\\)\\]"
 (require 'gnus-msg)
 
 
+(defvar rt-liber-gnus-p nil
+  "Non-nil when rt-liberation-gnus is composing a Gnus buffer.")
+
+
 (defun rt-liber-gnus-compose (addr ticket-alist options)
   "Create a Gnus *mail* buffer for the RT email interface.
 ADDR email address.
@@ -90,7 +82,23 @@ OPTIONS association list of options.
 	(suppress-subject (cdr (assoc 'suppress-subject options)))
 	(top-matter       (cdr (assoc 'top-matter options)))
 	(contents         (cdr (assoc 'contents options)))
-	(no-comment       (cdr (assoc 'no-comment options))))
+	(no-comment       (cdr (assoc 'no-comment options)))
+	(rt-liber-gnus-p  t)
+	(comment-start    ">")
+	message-text)
+    ;; prepare the text
+    (with-temp-buffer
+      (when top-matter
+	(insert top-matter))
+      (when contents
+	(newline 2)
+	(insert contents))
+      (when (not no-comment)
+	(comment-region (point-min) (point-max)))
+      (setq message-text (buffer-substring (point-min) (point-max))))
+    ;; launch into gnus and prepare the mail message
+    (when (not (gnus-alive-p))
+      (error "Gnus has been shut down"))
     (gnus-setup-message 'message
       (message-mail
        addr
@@ -100,19 +108,10 @@ OPTIONS association list of options.
 	       (cond (suppress-subject "")
 		     (provisional rt-liber-gnus-provisional-tag)
 		     (t (rt-liber-format "Re: %s" ticket-alist))))
-       rt-liber-gnus-answer-headers
        nil
        'switch-to-buffer))
-    (goto-char (point-max))
     (save-excursion
-      (when top-matter (insert top-matter))
-      (let ((start (point)))
-	(when contents (newline 2) (insert contents))
-	(when (not no-comment)
-	  (comment-region start (point))))
-      (newline 2)
-      (insert rt-liber-gnus-signature)
-      (newline))))
+      (insert message-text))))
 
 (defun rt-liber-gnus-content-to-string ()
   "Return the current content section as a string"
