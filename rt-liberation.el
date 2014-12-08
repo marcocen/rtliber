@@ -1102,7 +1102,7 @@ string then that will be the name of the new buffer."
 (defun rt-liber-multi-delete-spam ()
   "Delete marked tickets as spam."
   (interactive)
-  (error "this feature is currently broken! I'm working on it..."
+  (error "this feature is currently broken! I'm working on it...")
   ;; (cond ((featurep 'rt-liberation-multi)
   ;; 	 (when (y-or-n-p "Delete marked tickets as spam? ")
   ;; 	   (rt-liber-multi-flag-as-spam-and-delete)))
@@ -1392,7 +1392,7 @@ If FIELD already exists, update to VALUE."
 (defun rt-liber-browser-mark-as-spam ()
   "Mark the current ticket as spam, and delete it."
   (interactive)
-  (error "this feature is currently broken! I'm working on it..."
+  (error "this feature is currently broken! I'm working on it...")
   ;; (if (y-or-n-p "Delete marked ticket as spam? ")
   ;;     (let ((id (rt-liber-browser-ticket-id-at-point)))
   ;; 	(rt-liber-command-set-cf
