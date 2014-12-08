@@ -80,10 +80,10 @@
   "^Type: \\(EmailRecord\\|CommentEmailRecord\\|Correspond\\)"
   "Regular expression for correspondence sections.")
 
-(defvar rt-liber-rt-binary "~/rt-3.8.1/bin/rt"
+(defvar rt-liber-rt-binary "~/rt-X.Y.Z/bin/rt"
   "Location of the RT CLI binary.")
 
-(defvar rt-liber-rt-version "3.8.1"
+(defvar rt-liber-rt-version "X.Y.Z"
   "Version of the RT CLI.")
 
 (defvar rt-liber-username nil
@@ -188,7 +188,7 @@ of referring to certain statuses. The status strings are the
 server specific strings.")
 
 (defvar rt-liber-custom-field-dictionary
-  '((cf-is-spam  . "cf-is-spam"))
+  '((cf-is-spam  . "is-spam"))
   "Mapping between custom field symbols and custom field strings.
 
 The custom field symbols provide the programmer with a consistent
@@ -1097,13 +1097,17 @@ string then that will be the name of the new buffer."
  rt-liber-multi-flag-as-spam-and-delete
  "rt-liberation-multi.el")
 
+;; Unfortunately, RT have broken this. Hope I can fix it by moving
+;; over the the REST interface.
 (defun rt-liber-multi-delete-spam ()
   "Delete marked tickets as spam."
   (interactive)
-  (cond ((featurep 'rt-liberation-multi)
-	 (when (y-or-n-p "Delete marked tickets as spam? ")
-	   (rt-liber-multi-flag-as-spam-and-delete)))
-	(t (error "rt-liberation-multi isn't loaded"))))
+  (error "this feature is currently broken! I'm working on it..."
+  ;; (cond ((featurep 'rt-liberation-multi)
+  ;; 	 (when (y-or-n-p "Delete marked tickets as spam? ")
+  ;; 	   (rt-liber-multi-flag-as-spam-and-delete)))
+  ;; 	(t (error "rt-liberation-multi isn't loaded")))
+  )
 
 (defun rt-liber-browser-mode-quit ()
   "Bury the ticket browser."
@@ -1118,8 +1122,9 @@ string then that will be the name of the new buffer."
     (define-key map (kbd "RET") 'rt-liber-display-ticket-at-point)
     (define-key map (kbd "g") 'revert-buffer)
     (define-key map (kbd "G") 'rt-liber-browser-refresh-and-return)
-    (define-key map (kbd "s") 'rt-liber-browser-mark-as-spam)
-    (define-key map (kbd "S") 'rt-liber-multi-delete-spam)
+    ;; this feature is broken for now
+    ;; (define-key map (kbd "s") 'rt-liber-browser-mark-as-spam)
+    ;; (define-key map (kbd "S") 'rt-liber-multi-delete-spam)
     (define-key map (kbd "a") 'rt-liber-browser-assign)
     (define-key map (kbd "r") 'rt-liber-browser-resolve)
     (define-key map (kbd "o") 'rt-liber-browser-open)
@@ -1257,14 +1262,9 @@ string then that will be the name of the new buffer."
 (defun rt-liber-command-set-cf (id field value)
   "Add custom field FIELD with VALUE to ID.
 If FIELD already exists, update to VALUE."
-  ;; TODO: This may not work with standard rt cli.
-  ;;
-  ;; works fine with the stock version 3.8.2 -- yrk
-
-  ;; TODO: Should probably bust comment out to its own function.
-  (let ((command (rt-liber-command-get-command-string 'comment))
+  (let ((command (rt-liber-command-get-command-string 'edit))
 	(args
-	 (format "-f %s=%s ticket/%s" field value id)))
+	 (format "ticket/%s set %s=%s" id field value)))
     (rt-liber-parse-answer
      (rt-liber-command-runner command args)
      'rt-liber-command-runner-parser-f)))
@@ -1387,16 +1387,20 @@ If FIELD already exists, update to VALUE."
    queue)
   (rt-liber-browser-refresh))
 
+;; Unfortunately, RT have broken this. Hope I can fix it by moving
+;; over the the REST interface.
 (defun rt-liber-browser-mark-as-spam ()
   "Mark the current ticket as spam, and delete it."
   (interactive)
-  (if (y-or-n-p "Delete marked ticket as spam? ")
-      (let ((id (rt-liber-browser-ticket-id-at-point)))
-	(rt-liber-command-set-cf
-	 id (rt-liber-command-get-custom-field-string 'cf-is-spam) "yes")
-	(rt-liber-command-set-status-deleted id)
-	(rt-liber-browser-refresh))
-    (message "aborted")))
+  (error "this feature is currently broken! I'm working on it..."
+  ;; (if (y-or-n-p "Delete marked ticket as spam? ")
+  ;;     (let ((id (rt-liber-browser-ticket-id-at-point)))
+  ;; 	(rt-liber-command-set-cf
+  ;; 	 id (rt-liber-command-get-custom-field-string 'cf-is-spam) "yes")
+  ;; 	(rt-liber-command-set-status-deleted id)
+  ;; 	(rt-liber-browser-refresh))
+  ;;   (message "aborted"))
+  )
 
 (defun rt-liber-browser-take-ticket-at-point ()
   "Assign the ticket under point to `rt-liber-username'."
