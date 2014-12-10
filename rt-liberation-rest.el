@@ -33,8 +33,11 @@
 (require 'url-util)
 
 
-(defvar rt-liber-rest-debug ""
-  "Debug capture of last HTTP call.")
+(defvar rt-liber-rest-debug-buffer-name "*rt-liber-rest debug log*"
+  "Buffer name of debug capture.")
+
+(defvar rt-liber-rest-debug-p nil
+  "If non-nil, record traffic in a debug buffer.")
 
 (defvar rt-liber-rest-scheme "https"
   "Scheme used for transport. Is one of http or https.")
@@ -48,9 +51,22 @@
 (defvar rt-liber-rest-password ""
   "Password of RT account.")
 
+(defvar rt-liber-rest-verbose-p t
+  "If non-nil, be verbose about what's happening.")
+
+
+(defun rt-liber-rest-write-debug (str)
+  "Write to debug buffer."
+  (when (not (stringp str))
+    (error "argument not string"))
+  (when rt-liber-rest-debug-p
+    (with-current-buffer
+	(get-buffer-create rt-liber-rest-debug-buffer-name)
+      (goto-char (point-max))
+      (insert str))))
 
 (defun rt-liber-rest-search-string (scheme url username password query)
-  ""
+  "Return the search query string."
   (let ((user (url-encode-url username))
 	(pass (url-encode-url password)))
     (concat scheme
@@ -64,7 +80,7 @@
 	    "orderby=+Created")))
 
 (defun rt-liber-rest-show-string (scheme url ticket-id-list username password query)
-  ""
+  "Return the ticket show string."
   (let ((user (url-encode-url username))
 	(pass (url-encode-url password)))
     (concat scheme
@@ -76,7 +92,7 @@
 	    "pass=" pass "&")))
 
 (defun rt-liber-rest-call (url)
-  ""
+  "Perform a REST call with URL."
   (let ((url-request-method "POST"))
     (let ((response
 	   (url-retrieve-synchronously url))
@@ -85,10 +101,13 @@
 	    (with-current-buffer response
 	      (buffer-substring-no-properties (point-min)
 					      (point-max))))
-      (setq rt-liber-rest-debug str)
+      
+      (rt-liber-rest-write-debug
+       (format "outgoing -->\n%s\n<-- incoming\n%s\n" url str))
       str)))
 
 (defun rt-liber-rest-query-runner (op query-string)
+  "Run OP on QUERY-STRING."
   (message "starting REST '%s' query at %s..." op (current-time-string))
   (when (or (not (stringp op))
 	    (not (stringp query-string)))
@@ -100,22 +119,14 @@
 				       rt-liber-rest-username
 				       rt-liber-rest-password
 				       query-string)))
-	;; The "show" API call doesn't support getting multiple
-	;; tickets at once. This is a problem. I've emailed the
-	;; rt-users mailing list asking how to to this.
-	;;
-	;; A much more insidious method to figure this out is to
-	;; wireshark the CLI connection as it asks for multiple
-	;; tickets and see if we can capture the query the CLI
-	;; uses. This would necessitate a non-HTTPS connection, such
-	;; that the one to the demo servers.
 	((string= op "show")
-	 (rt-liber-rest-show-string rt-liber-rest-scheme
-				    rt-liber-rest-url
-				    query-string
-				    rt-liber-rest-username
-				    rt-liber-rest-password
-				    query-string))
+	 (rt-liber-rest-call
+	  (rt-liber-rest-show-string rt-liber-rest-scheme
+				     rt-liber-rest-url
+				     query-string
+				     rt-liber-rest-username
+				     rt-liber-rest-password
+				     query-string)))
 	(t (error "unknown op [%s]" op))))
 
 (defun rt-liber-rest-parse-http-header ()
@@ -146,7 +157,32 @@
    (rt-liber-rest-query-runner "ls" query)
    'rt-liber-rest-ticketsql-runner-parser-f))
 
+(defun rt-liber-rest-show-query-runner (idsublist)
+  "Iterate over IDSUBLIST and return the collected result."
+  (when (not (listp idsublist))
+    (error "argument not list"))
+  (with-temp-buffer
+    (let ((ticket-ids (reverse (copy-tree idsublist)))
+	  (c 1)
+	  (l (length idsublist)))
+      (while ticket-ids
 
-(provide 'rt-liber-rest)
+	(when rt-liber-rest-verbose-p
+	  (message "retrieving ticket %d/%d" c l)
+	  (setq c (1+ c)))
+
+	(insert
+	 (rt-liber-rest-query-runner "show" (caar ticket-ids)))
+	(setq ticket-ids (cdr ticket-ids))))
+    (buffer-substring (point-min) (point-max))))
+
+(defun rt-liber-rest-run-show-base-query (idsublist)
+  "Run \"show\" type query against the server with IDSUBLIST."
+  ;;(rt-liber-parse-answer
+  (rt-liber-rest-show-query-runner idsublist))
+;;#'rt-liber-ticket-base-retriever-parser-f))
+
+
+(provide 'rt-liberation-rest)
 
 ;;; rt-liberation-rest.el ends here.
