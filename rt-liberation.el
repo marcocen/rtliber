@@ -36,6 +36,8 @@
 (require 'time-date)
 (require 'cl)
 
+(require 'rt-liberation-rest)
+
 (defgroup rt-liber nil
   "*rt-liberation, the Emacs interface to RT"
   :prefix "rt-liber-"
@@ -385,12 +387,6 @@ AFTER  date after predicate."
 		  (match-string-no-properties 2))
 	    idsub-list))
     idsub-list))
-
-(defun rt-liber-run-ls-query (query)
-  "Run an \"ls\" type query against the server with QUERY."
-  (rt-liber-parse-answer
-   (rt-liber-query-runner "ls" query)
-   'rt-liber-ticketsql-runner-parser-f))
 
 
 ;;; --------------------------------------------------------
@@ -1082,7 +1078,7 @@ string then that will be the name of the new buffer."
   (condition-case excep
       (rt-liber-browser-startup
        (rt-liber-run-show-base-query
-	(rt-liber-run-ls-query query))
+	(rt-liber-rest-run-ls-query query))
        query new)
     (rt-liber-no-result-from-query-error
      (rt-liber-browser-with-message "no results from query"
