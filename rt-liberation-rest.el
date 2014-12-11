@@ -108,7 +108,6 @@
 
 (defun rt-liber-rest-query-runner (op query-string)
   "Run OP on QUERY-STRING."
-  (message "starting REST '%s' query at %s..." op (current-time-string))
   (when (or (not (stringp op))
 	    (not (stringp query-string)))
     (error "bad arguments"))
@@ -157,6 +156,16 @@
    (rt-liber-rest-query-runner "ls" query)
    'rt-liber-rest-ticketsql-runner-parser-f))
 
+(defun rt-liber-rest-show-process (response)
+  "Process and return the show query response."
+  (when (not (stringp response))
+    (error "argument not a string"))
+  (with-temp-buffer
+    (save-excursion
+      (insert response))
+    (rt-liber-rest-parse-http-header)
+    (buffer-substring (point) (point-max))))
+
 (defun rt-liber-rest-show-query-runner (idsublist)
   "Iterate over IDSUBLIST and return the collected result."
   (when (not (listp idsublist))
@@ -172,15 +181,18 @@
 	  (setq c (1+ c)))
 
 	(insert
-	 (rt-liber-rest-query-runner "show" (caar ticket-ids)))
-	(setq ticket-ids (cdr ticket-ids))))
+	 (rt-liber-rest-show-process
+	  (rt-liber-rest-query-runner "show" (caar ticket-ids))))
+	(setq ticket-ids (cdr ticket-ids))
+	(when ticket-ids
+	  (insert "\n--\n"))))
     (buffer-substring (point-min) (point-max))))
 
 (defun rt-liber-rest-run-show-base-query (idsublist)
   "Run \"show\" type query against the server with IDSUBLIST."
-  ;;(rt-liber-parse-answer
-  (rt-liber-rest-show-query-runner idsublist))
-;;#'rt-liber-ticket-base-retriever-parser-f))
+  (rt-liber-parse-answer
+   (rt-liber-rest-show-query-runner idsublist)
+   #'rt-liber-ticket-base-retriever-parser-f))
 
 
 (provide 'rt-liberation-rest)

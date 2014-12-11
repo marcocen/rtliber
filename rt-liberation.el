@@ -1077,7 +1077,7 @@ string then that will be the name of the new buffer."
   (interactive "Mquery: ")
   (condition-case excep
       (rt-liber-browser-startup
-       (rt-liber-run-show-base-query
+       (rt-liber-rest-run-show-base-query
 	(rt-liber-rest-run-ls-query query))
        query new)
     (rt-liber-no-result-from-query-error
