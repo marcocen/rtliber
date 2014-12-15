@@ -185,7 +185,9 @@
 	  (rt-liber-rest-query-runner "show" (caar ticket-ids))))
 	(setq ticket-ids (cdr ticket-ids))
 	(when ticket-ids
-	  (insert "\n--\n"))))
+	  (insert "\n--\n")))
+      (when rt-liber-rest-verbose-p
+	(message "done retrieving %d tickets" l)))
     (buffer-substring (point-min) (point-max))))
 
 (defun rt-liber-rest-run-show-base-query (idsublist)
