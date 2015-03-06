@@ -625,7 +625,7 @@ AFTER  date after predicate."
 TICKET-ALIST alist of ticket data.
 ASSOC-BROWSER if non-nil should be a ticket browser."
   (let* ((ticket-id (rt-liber-ticket-id-only ticket-alist))
-	 (contents (rt-liber-run-ticket-history-base-query ticket-id))
+	 (contents (rt-liber-rest-run-ticket-history-base-query ticket-id))
 	 (new-ticket-buffer (get-buffer-create
 			     (concat "*RT Ticket #" ticket-id "*"))))
     (with-current-buffer new-ticket-buffer

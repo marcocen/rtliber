@@ -91,6 +91,19 @@
 	    "user=" user "&"
 	    "pass=" pass "&")))
 
+(defun rt-liber-rest-history-string (scheme url ticket-id username password)
+  "Return the ticket show string."
+  (let ((user (url-encode-url username))
+	(pass (url-encode-url password)))
+    (concat scheme
+	    "://"
+	    url
+	    "/REST/1.0/ticket/" ticket-id
+	    "/history" "?"
+	    "format=l" "&"
+	    "user=" user "&"
+	    "pass=" pass)))
+
 (defun rt-liber-rest-call (url)
   "Perform a REST call with URL."
   (let ((url-request-method "POST"))
@@ -126,6 +139,13 @@
 				     rt-liber-rest-username
 				     rt-liber-rest-password
 				     query-string)))
+	((string= op "history")
+	 (rt-liber-rest-call
+	  (rt-liber-rest-history-string rt-liber-rest-scheme
+					rt-liber-rest-url
+					query-string
+					rt-liber-rest-username
+					rt-liber-rest-password)))
 	(t (error "unknown op [%s]" op))))
 
 (defun rt-liber-rest-parse-http-header ()
@@ -195,6 +215,14 @@
   (rt-liber-parse-answer
    (rt-liber-rest-show-query-runner idsublist)
    #'rt-liber-ticket-base-retriever-parser-f))
+
+(defun rt-liber-rest-run-ticket-history-base-query (ticket-id)
+  "Run history query against server for TICKET-ID."
+  (rt-liber-parse-answer
+   (rt-liber-rest-query-runner "history" ticket-id)
+   #'(lambda ()
+       (rt-liber-rest-parse-http-header)
+       (buffer-substring (point) (point-max)))))
 
 
 (provide 'rt-liberation-rest)
