@@ -104,6 +104,18 @@
 	    "user=" user "&"
 	    "pass=" pass)))
 
+(defun rt-liber-rest-command-edit-string (scheme url ticket-id username password)
+  "Return the ticket edit string."
+  (let ((user (url-encode-url username))
+	(pass (url-encode-url password)))
+    (concat scheme
+	    "://"
+	    url
+	    "/REST/1.0/ticket/" ticket-id
+	    "/edit" "?"
+	    "user=" user "&"
+	    "pass=" pass)))
+
 (defun rt-liber-rest-call (url)
   "Perform a REST call with URL."
   (let ((url-request-method "POST"))
@@ -223,6 +235,32 @@
    #'(lambda ()
        (rt-liber-rest-parse-http-header)
        (buffer-substring (point) (point-max)))))
+
+(defun rt-liber-rest-handle-response (buffer)
+  "Handle the response provided in BUFFER."
+  (with-current-buffer response-buffer
+    (rt-liber-rest-write-debug (buffer-string))))
+
+(defun rt-liber-rest-edit-runner (ticket-id field value)
+  "Run edit comment to set FIELD to VALUE."
+  (message "started edit command at %s..." (current-time-string))
+  (let ((request-data
+	 (format "content=%s: %s"
+		 (url-hexify-string field)
+		 (url-hexify-string value))))
+    (let ((url-request-method "POST")
+	  (url-request-data request-data)
+	  response-buffer)
+      (setq response-buffer
+	    (url-retrieve-synchronously
+	     (rt-liber-rest-command-edit-string
+	      rt-liber-rest-scheme
+	      rt-liber-rest-url
+	      ticket-id
+	      rt-liber-rest-username
+	      rt-liber-rest-password)))
+      (rt-liber-rest-handle-response response-buffer)))
+  (message "command ended at %s" (current-time-string)))
 
 
 (provide 'rt-liberation-rest)

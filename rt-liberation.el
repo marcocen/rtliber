@@ -30,6 +30,7 @@
 ;;
 ;; Started near the end of 2008.
 
+
 ;;; Code:
 
 (require 'browse-url)
@@ -179,6 +180,13 @@ of referring to certain commands. The command strings are the
 specific strings which would produce the desired effect in the
 server.")
 
+(defvar rt-liber-field-dictionary
+  '((owner   . "Owner"))
+  "Mapping between field symbols and RT field strings.
+
+The field symbols provide the programmer with a consistent way of
+referring to RT fields.")
+
 (defvar rt-liber-status-dictionary
   '((deleted  . "deleted")
     (resolved . "resolved")
@@ -214,6 +222,7 @@ This variable is made buffer local for the ticket history")
   "Browser associated with a ticket history.
 
 This variable is made buffer local for the ticket history")
+
 
 ;;; --------------------------------------------------------
 ;;; Debug log
@@ -538,6 +547,17 @@ AFTER  date after predicate."
 	  nil))
     nil))
 
+(defun rt-liber-get-field-string (field-symbol)
+  (when (not field-symbol)
+    (error "null field symbol"))
+
+  (defun rt-liber-ticket-owner-only (ticket-alist)
+    "Return the string value of the ticket owner."
+    (when (not ticket-alist)
+      (error "null ticket-alist"))
+    (cdr (assoc (rt-liber-get-field-string 'owner))
+	 ticket-alist)))
+
 (defun rt-liber-viewer-visit-in-browser ()
   "Visit this ticket in the RT Web interface."
   (interactive)
@@ -748,7 +768,7 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 	 (resolved   (cdr (assoc "Resolved" ticket-alist)))
 	 (requestors (cdr (assoc "Requestors" ticket-alist)))
 	 (creator    (cdr (assoc "Creator" ticket-alist)))
-	 (owner      (cdr (assoc "Owner" ticket-alist)))
+	 (owner      (rt-liber-ticket-owner-only ticket-alist))
 	 (queue      (cdr (assoc "Queue" ticket-alist)))
 	 (anc        (if rt-liber-anc-p
 			 (rt-liber-get-ancillary-text
@@ -884,7 +904,7 @@ If POINT is nil then called on (point)."
   "Return t if TICKET-ALIST is owned by Nobody."
   (when (not ticket-alist)
     (error "null argument"))
-  (let ((owner (cdr (assoc "Owner" ticket-alist))))
+  (let ((owner (rt-liber-ticket-owner-only ticket-alist)))
     (if (string= owner "Nobody")
 	nil
       t)))
@@ -969,7 +989,8 @@ If POINT is nil then called on (point)."
   (rt-liber-sort-ticket-list
    ticket-list
    #'(lambda (a b)
-       (rt-liber-lex-lessthan-p a b "Owner"))))
+       (rt-liber-lex-lessthan-p
+	a b (rt-liber-get-field-string 'owner)))))
 
 (defun rt-liber-sort-by-time-created (ticket-list)
   "Sort TICKET-LIST in reverse chronological order."
@@ -978,6 +999,7 @@ If POINT is nil then called on (point)."
     ticket-list
     #'(lambda (a b)
 	(rt-liber-time-lessthan-p a b "Created")))))
+
 
 ;;; --------------------------------------------------------
 ;;; Ticket browser filtering
@@ -991,6 +1013,7 @@ If POINT is nil then called on (point)."
 This function is really a placeholder for user custom functions,
 and as such always return t."
   t)
+
 
 ;;; --------------------------------------------------------
 ;;; Version comparison functions
@@ -1204,12 +1227,10 @@ string then that will be the name of the new buffer."
     (rt-liber-set-ancillary-text
      (read-from-minibuffer "Text: " initial-contents))))
 
+
 ;;; --------------------------------------------------------
 ;;; Command module
 ;;; --------------------------------------------------------
-
-;; when this module is stable enough it should be documented in the
-;; manual -- yrk
 
 (defun rt-liber-command-get-dictionary-value (sym dic)
   "Utility function for retrieving alist values."
@@ -1323,13 +1344,11 @@ If FIELD already exists, update to VALUE."
 
 (defun rt-liber-command-set-owner (id owner)
   "Set the owner of ticket ID to OWNER."
-  (let ((command (rt-liber-command-get-command-string 'edit))
-	(args
-	 (format "ticket/%s set owner=%s" id owner)))
-    (rt-liber-handle-response-set-owner
-     (rt-liber-parse-answer
-      (rt-liber-command-runner command args)
-      'rt-liber-command-runner-parser-f))))
+  (rt-liber-handle-response-set-owner
+   (rt-liber-parse-answer
+    (rt-liber-rest-edit-runner
+     id (rt-liber-get-field-string 'owner) owner)
+    'rt-liber-command-runner-parser-f)))
 
 (defun rt-liber-command-set-queue (id queue)
   "Set the queue of ticket ID to QUEUE."
