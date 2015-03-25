@@ -244,6 +244,7 @@
 (defun rt-liber-rest-edit-runner (ticket-id field value)
   "Run edit comment to set FIELD to VALUE."
   (message "started edit command at %s..." (current-time-string))
+  (message "ticket #%s, %s <- %s" ticket-id field value)
   (let ((request-data
 	 (format "content=%s: %s"
 		 (url-hexify-string field)
@@ -260,7 +261,14 @@
 	      rt-liber-rest-username
 	      rt-liber-rest-password)))
       (rt-liber-rest-handle-response response-buffer)))
-  (message "command ended at %s" (current-time-string)))
+  (message "edit command ended at %s" (current-time-string)))
+
+(defun rt-liber-rest-command-set-status (id status)
+  "Set ticket ID status to be STATUS."
+  (let ((field (rt-liber-get-field-string 'status)))
+    (rt-liber-parse-answer
+     (rt-liber-rest-edit-runner id field status)
+     'rt-liber-command-runner-parser-f)))
 
 
 (provide 'rt-liberation-rest)

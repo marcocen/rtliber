@@ -181,7 +181,8 @@ specific strings which would produce the desired effect in the
 server.")
 
 (defvar rt-liber-field-dictionary
-  '((owner   . "Owner"))
+  '((owner   . "Owner")
+    (status  . "Status"))
   "Mapping between field symbols and RT field strings.
 
 The field symbols provide the programmer with a consistent way of
@@ -190,7 +191,8 @@ referring to RT fields.")
 (defvar rt-liber-status-dictionary
   '((deleted  . "deleted")
     (resolved . "resolved")
-    (open     . "open"))
+    (open     . "open")
+    (new      . "new"))
   "Mapping between status symbols and status strings.
 
 The status symbols provide the programmer with a consistent way
@@ -550,13 +552,14 @@ AFTER  date after predicate."
 (defun rt-liber-get-field-string (field-symbol)
   (when (not field-symbol)
     (error "null field symbol"))
+  (cdr (assoc field-symbol rt-liber-field-dictionary)))
 
-  (defun rt-liber-ticket-owner-only (ticket-alist)
-    "Return the string value of the ticket owner."
-    (when (not ticket-alist)
-      (error "null ticket-alist"))
-    (cdr (assoc (rt-liber-get-field-string 'owner))
-	 ticket-alist)))
+(defun rt-liber-ticket-owner-only (ticket-alist)
+  "Return the string value of the ticket owner."
+  (when (not ticket-alist)
+    (error "null ticket-alist"))
+  (cdr (assoc (rt-liber-get-field-string 'owner)
+	      ticket-alist)))
 
 (defun rt-liber-viewer-visit-in-browser ()
   "Visit this ticket in the RT Web interface."
@@ -1147,6 +1150,7 @@ string then that will be the name of the new buffer."
     (define-key map (kbd "a") 'rt-liber-browser-assign)
     (define-key map (kbd "r") 'rt-liber-browser-resolve)
     (define-key map (kbd "o") 'rt-liber-browser-open)
+    (define-key map (kbd "N") 'rt-liber-browser-new)
     (define-key map (kbd "t") 'rt-liber-browser-take-ticket-at-point)
     (define-key map (kbd "A") 'rt-liber-browser-ancillary-text)
     (define-key map (kbd "SPC") 'scroll-up)
@@ -1316,17 +1320,22 @@ If FIELD already exists, update to VALUE."
 
 (defun rt-liber-command-set-status-deleted (id)
   "Set the status of ticket ID to `deleted'."
-  (rt-liber-command-set-status
+  (rt-liber-rest-command-set-status
    id (rt-liber-command-get-status-string 'deleted)))
+
+(defun rt-liber-command-set-status-new (id)
+  "Set the status of ticket ID to `new'."
+  (rt-liber-rest-command-set-status
+   id (rt-liber-command-get-status-string 'new)))
 
 (defun rt-liber-command-set-status-resolved (id)
   "Set the status of ticket ID to `resolved'."
-  (rt-liber-command-set-status
+  (rt-liber-rest-command-set-status
    id (rt-liber-command-get-status-string 'resolved)))
 
 (defun rt-liber-command-set-status-open (id)
   "Set the status of ticket ID to `open'."
-  (rt-liber-command-set-status
+  (rt-liber-rest-command-set-status
    id (rt-liber-command-get-status-string 'open)))
 
 ;; This is brittle because the server doesn't respond with a code but
@@ -1391,6 +1400,13 @@ If FIELD already exists, update to VALUE."
   "Open the current ticket."
   (interactive)
   (rt-liber-command-set-status-open
+   (rt-liber-browser-ticket-id-at-point))
+  (rt-liber-browser-refresh-and-return))
+
+(defun rt-liber-browser-new ()
+  "Change the current ticket's status to `new'."
+  (interactive)
+  (rt-liber-command-set-status-new
    (rt-liber-browser-ticket-id-at-point))
   (rt-liber-browser-refresh-and-return))
 
