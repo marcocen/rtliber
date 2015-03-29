@@ -249,6 +249,7 @@
 	 (format "content=%s: %s"
 		 (url-hexify-string field)
 		 (url-hexify-string value))))
+    (rt-liber-rest-write-debug (concat request-data "\n"))
     (let ((url-request-method "POST")
 	  (url-request-data request-data)
 	  response-buffer)
