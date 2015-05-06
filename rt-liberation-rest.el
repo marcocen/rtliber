@@ -128,7 +128,7 @@
 					      (point-max))))
       
       (rt-liber-rest-write-debug
-       (format "outgoing -->\n%s\n<-- incoming\n%s\n" url str))
+       (format "outgoing rest call -->\n%s\n<-- incoming\n%s\n" url str))
       str)))
 
 (defun rt-liber-rest-query-runner (op query-string)
