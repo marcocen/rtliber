@@ -1144,9 +1144,6 @@ string then that will be the name of the new buffer."
     (define-key map (kbd "RET") 'rt-liber-display-ticket-at-point)
     (define-key map (kbd "g") 'revert-buffer)
     (define-key map (kbd "G") 'rt-liber-browser-refresh-and-return)
-    ;; this feature is broken for now
-    ;; (define-key map (kbd "s") 'rt-liber-browser-mark-as-spam)
-    ;; (define-key map (kbd "S") 'rt-liber-multi-delete-spam)
     (define-key map (kbd "a") 'rt-liber-browser-assign)
     (define-key map (kbd "r") 'rt-liber-browser-resolve)
     (define-key map (kbd "o") 'rt-liber-browser-open)
@@ -1280,20 +1277,20 @@ string then that will be the name of the new buffer."
   "Display command return status from the server to the user."
   (message (buffer-string)))
 
-(defun rt-liber-command-set-cf (id field value)
-  "Add custom field FIELD with VALUE to ID.
-If FIELD already exists, update to VALUE."
-  (let ((command (rt-liber-command-get-command-string 'edit))
-	(args
-	 (format "ticket/%s set %s=%s" id field value)))
-    (rt-liber-parse-answer
-     (rt-liber-command-runner command args)
-     'rt-liber-command-runner-parser-f)))
+;; Depreciated in favor of using the REST interface.
+;;
+;; (defun rt-liber-command-set-cf (id field value)
+;;   "Add custom field FIELD with VALUE to ID.
+;; If FIELD already exists, update to VALUE."
+;;   (let ((command (rt-liber-command-get-command-string 'edit))
+;; 	(args
+;; 	 (format "ticket/%s set %s=%s" id field value)))
+;;     (rt-liber-parse-answer
+;;      (rt-liber-command-runner command args)
+;;      'rt-liber-command-runner-parser-f)))
 
 (defun rt-liber-command-set-status (id status)
   "Set ticket ID status to be STATUS."
-  ;; TODO: Sanity check status
-  ;; TODO: defmacro?
   (let ((command (rt-liber-command-get-command-string 'edit))
 	(args
 	 (format "ticket/%s set status=%s" id status)))
@@ -1417,21 +1414,6 @@ If FIELD already exists, update to VALUE."
    (rt-liber-browser-ticket-id-at-point)
    queue)
   (rt-liber-browser-refresh))
-
-;; Unfortunately, RT have broken this. Hope I can fix it by moving
-;; over the the REST interface.
-(defun rt-liber-browser-mark-as-spam ()
-  "Mark the current ticket as spam, and delete it."
-  (interactive)
-  (error "this feature is currently broken! I'm working on it...")
-  ;; (if (y-or-n-p "Delete marked ticket as spam? ")
-  ;;     (let ((id (rt-liber-browser-ticket-id-at-point)))
-  ;; 	(rt-liber-command-set-cf
-  ;; 	 id (rt-liber-command-get-custom-field-string 'cf-is-spam) "yes")
-  ;; 	(rt-liber-command-set-status-deleted id)
-  ;; 	(rt-liber-browser-refresh))
-  ;;   (message "aborted"))
-  )
 
 (defun rt-liber-browser-take-ticket-at-point ()
   "Assign the ticket under point to `rt-liber-username'."
