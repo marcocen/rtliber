@@ -264,12 +264,11 @@
       (rt-liber-rest-handle-response response-buffer)))
   (message "edit command ended at %s" (current-time-string)))
 
-(defun rt-liber-rest-command-set-status (id status)
+(defun rt-liber-rest-command-set (id field status)
   "Set ticket ID status to be STATUS."
-  (let ((field (rt-liber-get-field-string 'status)))
-    (rt-liber-parse-answer
-     (rt-liber-rest-edit-runner id field status)
-     'rt-liber-command-runner-parser-f)))
+  (rt-liber-parse-answer
+   (rt-liber-rest-edit-runner id field status)
+   'rt-liber-command-runner-parser-f))
 
 
 (provide 'rt-liberation-rest)

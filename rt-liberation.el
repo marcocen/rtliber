@@ -182,6 +182,7 @@ server.")
 
 (defvar rt-liber-field-dictionary
   '((owner   . "Owner")
+    (queue   . "Queue")
     (status  . "Status"))
   "Mapping between field symbols and RT field strings.
 
@@ -198,14 +199,6 @@ referring to RT fields.")
 The status symbols provide the programmer with a consistent way
 of referring to certain statuses. The status strings are the
 server specific strings.")
-
-(defvar rt-liber-custom-field-dictionary
-  '((cf-is-spam  . "is-spam"))
-  "Mapping between custom field symbols and custom field strings.
-
-The custom field symbols provide the programmer with a consistent
-way of referring to certain custom fields. The custom field
-strings are the server specific strings.")
 
 (defvar rt-liber-debug-log-enable nil
   "If t then enable logging of communication to a buffer.
@@ -1255,23 +1248,9 @@ string then that will be the name of the new buffer."
      (error "could not find the RT binary at: %s" rt-liber-rt-binary))
     (error "an unhandled exception occured: %s" excep)))
 
-;; the user might not see this but at the very least it will leave a
-;; trace in the *Messages* buffer -- yrk
 (defun rt-liber-command-runner-parser-f ()
   "Display command return status from the server to the user."
   (message (buffer-string)))
-
-;; Depreciated in favor of using the REST interface.
-;;
-;; (defun rt-liber-command-set-cf (id field value)
-;;   "Add custom field FIELD with VALUE to ID.
-;; If FIELD already exists, update to VALUE."
-;;   (let ((command (rt-liber-command-get-command-string 'edit))
-;; 	(args
-;; 	 (format "ticket/%s set %s=%s" id field value)))
-;;     (rt-liber-parse-answer
-;;      (rt-liber-command-runner command args)
-;;      'rt-liber-command-runner-parser-f)))
 
 (defun rt-liber-command-set-status (id status)
   "Set ticket ID status to be STATUS."
@@ -1301,53 +1280,38 @@ string then that will be the name of the new buffer."
 
 (defun rt-liber-command-set-status-deleted (id)
   "Set the status of ticket ID to `deleted'."
-  (rt-liber-rest-command-set-status
-   id (rt-liber-command-get-status-string 'deleted)))
+  (rt-liber-rest-command-set
+   id
+   (rt-liber-get-field-string 'status)
+   (rt-liber-com  mand-get-status-string 'deleted)))
 
 (defun rt-liber-command-set-status-new (id)
   "Set the status of ticket ID to `new'."
-  (rt-liber-rest-command-set-status
-   id (rt-liber-command-get-status-string 'new)))
+  (rt-liber-rest-command-set
+   id
+   (rt-liber-get-field-string 'status)
+   (rt-liber-command-get-status-string 'new)))
 
 (defun rt-liber-command-set-status-resolved (id)
   "Set the status of ticket ID to `resolved'."
-  (rt-liber-rest-command-set-status
-   id (rt-liber-command-get-status-string 'resolved)))
+  (rt-liber-rest-command-set
+   id
+   (rt-liber-get-field-string 'status)
+   (rt-liber-command-get-status-string 'resolved)))
 
 (defun rt-liber-command-set-status-open (id)
   "Set the status of ticket ID to `open'."
-  (rt-liber-rest-command-set-status
-   id (rt-liber-command-get-status-string 'open)))
+  (rt-liber-rest-command-set
+   id
+   (rt-liber-get-field-string 'status)
+   (rt-liber-command-get-status-string 'open)))
 
-;; This is brittle because the server doesn't respond with a code but
-;; with some free text, and we have no guarantee that the text will be
-;; stable from version to version.
-(defun rt-liber-handle-response-set-owner (response)
-  "Handle the response from the RT server. Pass on the response."
-  (when
-      (with-temp-buffer
-	(insert response)
-	(goto-char (point-min))
-	(re-search-forward "That user does not exist" (point-max) t))
-    (error "that user does not exist"))
-  response)
-
-(defun rt-liber-command-set-owner (id owner)
-  "Set the owner of ticket ID to OWNER."
-  (rt-liber-handle-response-set-owner
-   (rt-liber-parse-answer
-    (rt-liber-rest-edit-runner
-     id (rt-liber-get-field-string 'owner) owner)
-    'rt-liber-command-runner-parser-f)))
-
-(defun rt-liber-command-set-queue (id queue)
-  "Set the queue of ticket ID to QUEUE."
-  (let ((command (rt-liber-command-get-command-string 'edit))
-	(args
-	 (format "ticket/%s set queue=%s" id queue)))
-    (rt-liber-parse-answer
-     (rt-liber-command-runner command args)
-     'rt-liber-command-runner-parser-f)))
+(defun rt-liber-command-set-owner (id new-owner)
+  "Set the owner of ticket in TICKET-ALIST to NEW-OWNER."
+  (rt-liber-rest-command-set
+   id
+   (rt-liber-get-field-string 'owner)
+   new-owner))
 
 (defun rt-liber-browser-prioritize (n)
   "Assigng current ticket priority N."
@@ -1404,31 +1368,7 @@ string then that will be the name of the new buffer."
   (interactive)
   (when (not rt-liber-username)
     (error "`rt-liber-username' is nil"))
-  (let ((taken-p (rt-liber-ticket-taken-p
-		  (get-text-property (point) 'rt-ticket))))
-    (when (or (not taken-p)
-	      (and taken-p
-		   (y-or-n-p "Ticket already taken! Are you sure?")))
-      (rt-liber-command-set-owner
-       (rt-liber-browser-ticket-id-at-point)
-       rt-liber-username)
-      (rt-liber-browser-refresh))))
-
-(defun rt-liber-viewer-take-ticket ()
-  "Assign the current ticket to `rt-liber-username'."
-  (interactive)
-  (when (not rt-liber-username)
-    (error "`rt-liber-username' is nil"))
-  (let ((id (rt-liber-ticket-id-only rt-liber-ticket-local))
-	(taken-p (rt-liber-ticket-taken-p rt-liber-ticket-local)))
-    (if id
-	(progn
-	  (when (or (not taken-p)
-		    (and taken-p
-			 (y-or-n-p "Ticket already taken! Are you sure?")))
-	    (rt-liber-command-set-owner id rt-liber-username)
-	    (rt-liber-refresh-ticket-history)))
-      (error "no ticket currently in view"))))
+  (rt-liber-browser-assign rt-liber-username))
 
 
 (provide 'rt-liberation)
