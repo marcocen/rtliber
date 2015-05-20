@@ -96,18 +96,6 @@
      ticket-id name))
   (rt-liber-browser-refresh))
 
-(defun rt-liber-multi-flag-as-spam-and-delete ()
-  "Flag all marked tickets as spam, and delete them."
-  (interactive)
-  (when (not rt-liber-marked-tickets)
-    (error "no marked tickets"))
-  (dolist (ticket-id rt-liber-marked-tickets)
-    (rt-liber-command-set-cf
-     ticket-id
-     (rt-liber-command-get-custom-field-string
-      'cf-is-spam) "yes")
-    (rt-liber-command-set-status-deleted ticket-id))
-  (rt-liber-browser-refresh))
 
 (provide 'rt-liberation-multi)
 

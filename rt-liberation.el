@@ -1115,22 +1115,6 @@ string then that will be the name of the new buffer."
 ;;; Major mode definitions
 ;;; --------------------------------------------------------
 
-(declare-function
- rt-liber-multi-flag-as-spam-and-delete
- "rt-liberation-multi.el")
-
-;; Unfortunately, RT have broken this. Hope I can fix it by moving
-;; over the the REST interface.
-(defun rt-liber-multi-delete-spam ()
-  "Delete marked tickets as spam."
-  (interactive)
-  (error "this feature is currently broken! I'm working on it...")
-  ;; (cond ((featurep 'rt-liberation-multi)
-  ;; 	 (when (y-or-n-p "Delete marked tickets as spam? ")
-  ;; 	   (rt-liber-multi-flag-as-spam-and-delete)))
-  ;; 	(t (error "rt-liberation-multi isn't loaded")))
-  )
-
 (defun rt-liber-browser-mode-quit ()
   "Bury the ticket browser."
   (interactive)
