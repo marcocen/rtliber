@@ -13,8 +13,8 @@
 
 
 @copying
- @copyright{} 2009
-   Yoni Rabkin yonirabkin@@member.fsf.org
+ @copyright{} 2009, 2010, 2011, 2012, 2013, 2014, 2015
+   Yoni Rabkin yrk@@gnu.org
 @quotation
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.1 or
@@ -47,7 +47,6 @@ This is the Manual for the rt-liberation system
 
 @menu
 * Introduction::                Introduction to rt-liberation.
-* Dependencies::                Before you can use rt-liberation.
 * Installation::                Setup rt-liberation to work on the system.
 
 Using rt-liberation
@@ -108,106 +107,16 @@ Ticket Browser
 
 rt-liberation is a GNU/Emacs package for working with the Request
 Tracker (henceforth abbreviated as just ``RT'') software from Best
-Practical Solutions. RT has a Web interface and a command line
-interface (the ``RT CLI''). rt-liberation uses the RT CLI as a backend
-to communicate to the server.
+Practical Solutions. RT has an interactive Web interface, a command
+line interface (the ``RT CLI''), and a REST interface. rt-liberation
+uses the RT REST interface to communicate with the RT server.
 
 rt-liberation allows sending search queries to the RT server, browsing
 the resulting tickets, viewing the tickets' contents and performing
-operations on the ticket.
+operations on the tickets.
 
 
 
-
-
-@c --------------------------------------------------
-
-@node Dependencies
-@chapter Dependencies
-
-@cindex dependencies
-
-rt-liberation has been tested exclusively on GNU/Emacs.
-
-rt-liberation uses the RT command line interface (RT CLI) as a back-end
-to communicate with the RT server. rt-liberation will need a local
-copy of the RT software on the machine running rt-liberation. RT is
-available at @uref{http://bestpractical.com/rt/download.html}
-
-@menu
-* RT CLI Setup::        Getting the RT Command Line Interface to work
-@end menu
-
-
-
-
-@node RT CLI Setup
-@section RT CLI Setup
-
-The following is a short description of how to get the RT CLI setup on
-the machine where rt-liberation will be running. It assumes a
-GNU/Linux distribution such as Trisquel @uref{http://trisquel.info/}.
-
-You need the address of the remote RT server (note whether it's an
-HTTP or HTTPS address), and the username and password for the user
-account on that server.
-
-Download a local copy of RT (version 4.2.3 happened to be extant at
-the time of writing).
-
-@example
-$ wget http://download.bestpractical.com/pub/rt/release/rt-4.2.3.tar.gz
-$ tar xzf rt-4.2.3.tar.gz
-@end example
-
-Navigate down to the ``bin'' directory and try to run the RT CLI.
-
-@example
-$ cd rt-4.2.3/bin
-$ ./rt
-@end example
-
-If you don't already have Perl LWP installed it will fail to run, in
-which case you have to satisfy this dependency. The following command
-should do it on a Trisquel GNU/Linux or similar system:
-
-@example
-sudo apt-get install liblwp-protocol-https-perl
-@end example
-
-Trying to run the RT CLI at this point should work, and you will be
-greeted by the friendly RT CLI prompt ``rt>''. Feel free to hit Ctrl-C
-at this point because while the RT CLI is running it is still
-unconfigured.
-
-The RT CLI looks for a file named ``.rtrc'' in your home directory, so
-create an ``~/.rtrc'' file and, using the information collected
-earlier, fill in the details.
-
-@example
-server https://rt.server.somewhere
-user USERNAME-ON-RT
-passwd PASSWORD-ON-RT
-@end example
-
-Now back to running the RT CLI we can enter a simple RT query to check
-the setup. If everything is set up correctly then the result will be a
-list of tickets.
-
-@example
-rt> ls "Queue=sprockets and Status=new"
-Ticket Owner Queue    Age   Told Status Requestor Subject
---------------------------------------------------------------------------------
-==========  2 unowned tickets ==========
-   701       sproc  5 min        new    admin@@no. foo
-   702       sproc  4 min        new    john.foo@@ john's foo
-@end example
-
-At this point you know that rt-liberation has everything it needs to
-call into the server@footnote{Implementing rt-liberation in this way
-has the additional benefit of isolating the rt-liberation code
-somewhat from changes in the way the RT CLI communicates with the RT
-server.}.
 
 @c --------------------------------------------------
 
@@ -230,16 +139,16 @@ Tell GNU/Emacs to load the package with:
 (require 'rt-liberation)
 @end lisp
 
-Tell rt-liberation where to find the RT binary and which version is
-being used, for example:
+Tell rt-liberation where to find the RT server's REST interface and
+which version of RT the server is running:
 
 @lisp
-(setq rt-liber-rt-binary "~/src/rt-3.8.2/bin/rt"
-      rt-liber-rt-version "3.8.8")
+(setq rt-liber-rest-url "rt.example.org"
+      rt-liber-rt-version "4.2.4")
 @end lisp
 
-rt-liberation can issue a command to ``take'' a ticket, that is,
-assign it to yourself. For this the variable @var{rt-liber-username}
+rt-liberation can issue a command to ``take'' a ticket (that is,
+assign it to yourself). For this the variable @var{rt-liber-username}
 must be set:
 
 @lisp
@@ -251,6 +160,7 @@ that to work the base URL needs to be set in
 @var{rt-liber-base-url}. For example:
 
 (setq rt-liber-base-url "https://rt.foo.org/")
+
 
 @c --------------------------------------------------
 
@@ -870,17 +780,17 @@ variables. Below is a thorough description of those variables.
       rt-liber-gnus-subject-name    "ourserver.org")
 @end lisp
 
-@defopt
+@defopt rt-liber-gnus-address
 @var{rt-liber-gnus-address} is the email address which is configured
 in the RT server email interface for sending a response to the
 ticket's requestor.
 @end defopt
-@defopt
+@defopt rt-liber-gnus-comment-address
 @var{rt-liber-gnus-comment-address} is the email address which is
 configured in the RT server email interface for adding a comment under
 the ticket in question.
 @end defopt
-@defopt
+@defopt rt-liber-gnus-subject-name
 @var{rt-liber-gnus-subject-name} is a string, typically included at
 the beginning of the square brackets in the subject. The string is a
 part of the subject line which helps the RT server recognize the
