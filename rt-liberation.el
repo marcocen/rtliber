@@ -83,9 +83,6 @@
   "^Type: \\(EmailRecord\\|CommentEmailRecord\\|Correspond\\)"
   "Regular expression for correspondence sections.")
 
-(defvar rt-liber-rt-binary "~/rt-X.Y.Z/bin/rt"
-  "Location of the RT CLI binary.")
-
 (defvar rt-liber-rt-version "X.Y.Z"
   "Version of the RT CLI.")
 
@@ -183,7 +180,8 @@ server.")
 (defvar rt-liber-field-dictionary
   '((owner   . "Owner")
     (queue   . "Queue")
-    (status  . "Status"))
+    (status  . "Status")
+    (priority  . "Priority"))
   "Mapping between field symbols and RT field strings.
 
 The field symbols provide the programmer with a consistent way of
@@ -341,26 +339,8 @@ AFTER  date after predicate."
 
 
 ;;; --------------------------------------------------------
-;;; Query runner
+;;; Parse Answer
 ;;; --------------------------------------------------------
-
-(defun rt-liber-query-runner (op query-string)
-  "Run OP query against the server with QUERY-STRING."
-  (message "started '%s' query at %s..." op (current-time-string))
-  (condition-case excep
-      (with-temp-buffer
-	(if (and (not (rt-liber-version-< rt-liber-rt-version
-					  "3.8.2"))
-		 (string= op "show"))
-	    (call-process rt-liber-rt-binary nil t nil
-			  op "-l" query-string)
-	  (call-process rt-liber-rt-binary nil t nil
-			op query-string))
-	(message "query ended at %s" (current-time-string))
-	(buffer-string))
-    (file-error
-     (error "could not find the RT binary at: %s" rt-liber-rt-binary))
-    (error "an unhandled exception occured: %s" excep)))
 
 (defun rt-liber-parse-answer (answer-string parser-f)
   "Operate on ANSWER-STRING with PARSER-F."
@@ -621,7 +601,7 @@ AFTER  date after predicate."
   "Key map for ticket viewer.")
 
 (define-derived-mode rt-liber-viewer-mode nil
-  "RT Liberation Viewer"
+		     "RT Liberation Viewer"
   "Major Mode for viewing RT tickets.
 \\{rt-liber-viewer-mode-map}"
   (set
@@ -1129,14 +1109,13 @@ string then that will be the name of the new buffer."
     (define-key map (kbd "A") 'rt-liber-browser-ancillary-text)
     (define-key map (kbd "SPC") 'scroll-up)
     (define-key map (kbd "DEL") 'scroll-down)
-    (define-key map (kbd "m") 'rt-liber-browser-move)
     (define-key map (kbd "M") 'rt-liber-mark-ticket-at-point)
     (define-key map (kbd "P") 'rt-liber-browser-prioritize)
     map)
   "Key map for ticket browser.")
 
 (define-derived-mode rt-liber-browser-mode nil
-  "RT Liberation Browser"
+		     "RT Liberation Browser"
   "Major Mode for browsing RT tickets.
 \\{rt-liber-browser-mode-map}"
   (set (make-local-variable 'revert-buffer-function)
@@ -1235,48 +1214,9 @@ string then that will be the name of the new buffer."
    custom-field-symbol
    rt-liber-custom-field-dictionary))
 
-(defun rt-liber-command-runner (op arg-string)
-  "Run OP command against the server with ARG-STRING."
-  (message "started '%s' command at %s..." op (current-time-string))
-  (condition-case excep
-      (with-temp-buffer
-	(call-process-shell-command rt-liber-rt-binary nil t nil
-				    op arg-string)
-	(message "command ended at %s" (current-time-string))
-	(buffer-string))
-    (file-error
-     (error "could not find the RT binary at: %s" rt-liber-rt-binary))
-    (error "an unhandled exception occured: %s" excep)))
-
 (defun rt-liber-command-runner-parser-f ()
   "Display command return status from the server to the user."
   (message (buffer-string)))
-
-(defun rt-liber-command-set-status (id status)
-  "Set ticket ID status to be STATUS."
-  (let ((command (rt-liber-command-get-command-string 'edit))
-	(args
-	 (format "ticket/%s set status=%s" id status)))
-    (rt-liber-parse-answer
-     (rt-liber-command-runner command args)
-     'rt-liber-command-runner-parser-f)))
-
-(defun rt-liber-command-set-priority (id priority)
-  "Set ticket ID priority to be PRIORITY."
-  (let ((command (rt-liber-command-get-command-string 'edit))
-	(args
-	 (format "ticket/%s set priority=%s"
-		 id
-		 (if (= priority 0)
-		     ;; this is to work around a weird bug in RT
-		     ;; (3.8.8) in which the CLI command to set the
-		     ;; priority to 0 doesn't work, but sending 00
-		     ;; does
-		     "00"
-		   (format "%d" priority)))))
-    (rt-liber-parse-answer
-     (rt-liber-command-runner command args)
-     'rt-liber-command-runner-parser-f)))
 
 (defun rt-liber-command-set-status-deleted (id)
   "Set the status of ticket ID to `deleted'."
@@ -1316,9 +1256,14 @@ string then that will be the name of the new buffer."
 (defun rt-liber-browser-prioritize (n)
   "Assigng current ticket priority N."
   (interactive "nPriority (number): ")
-  (rt-liber-command-set-priority
+  (rt-liber-rest-command-set
    (rt-liber-browser-ticket-id-at-point)
-   n)
+   (rt-liber-get-field-string 'priority)
+   ;; Work around the strangeness of RT. RT doesn't accept "0" as
+   ;; string to set priority to 0, but does accept "00".
+   (if (< 0 n)
+       (format "%s" n)
+     "00"))
   (rt-liber-browser-refresh-and-return))
 
 (defun rt-liber-browser-assign (name)
@@ -1354,14 +1299,6 @@ string then that will be the name of the new buffer."
   (rt-liber-command-set-status-new
    (rt-liber-browser-ticket-id-at-point))
   (rt-liber-browser-refresh-and-return))
-
-(defun rt-liber-browser-move (queue)
-  "Move the current ticket to a different queue."
-  (interactive "sQueue: ")
-  (rt-liber-command-set-queue
-   (rt-liber-browser-ticket-id-at-point)
-   queue)
-  (rt-liber-browser-refresh))
 
 (defun rt-liber-browser-take-ticket-at-point ()
   "Assign the ticket under point to `rt-liber-username'."
