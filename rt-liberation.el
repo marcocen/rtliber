@@ -3,7 +3,7 @@
 ;; Copyright (C) 2008, 2009, 2010, 2011, 2014, 2015 Yoni Rabkin, Aaron
 ;; S. Hawley, John Sullivan
 ;;
-;; Authors: Yoni Rabkin <yonirabkin@member.fsf.org>, Aaron S. Hawley
+;; Authors: Yoni Rabkin <yrk@gnu.org>, Aaron S. Hawley
 ;; <aaron.s.hawley@gmail.com>, John Sullivan <johnsu01@wjsullivan.net>
 ;;
 ;; This program is free software; you can redistribute it and/or

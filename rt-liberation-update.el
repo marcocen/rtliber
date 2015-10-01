@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2009 Yoni Rabkin
 ;;
-;; Authors: Yoni Rabkin <yonirabkin@member.fsf.org>
+;; Authors: Yoni Rabkin <yrk@gnu.org>
 ;;
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
