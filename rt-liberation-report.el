@@ -32,30 +32,22 @@
 
 (require 'rt-liberation-rest)
 
-;; This query works for a single day _BUT_ only if `resolved' is added
-;; as a `rt-liber-attrib-p'. The `nil' is the result when there are no
-;; tickets to return and the list is what comes back when tickets are
-;; found.
-;;
-;; (rt-liber-rest-run-show-base-query
-;;  (rt-liber-rest-run-ls-query
-;;   (rt-liber-compile-query
-;;    (and (queue    "licensing")
-;; 	(resolved "2015-10-09")
-;; 	(status   "resolved")))))
-;;
-;; However, note that the following inequalities work too and would be
-;; the right way to do the query:
-;;
-;; (rt-liber-rest-run-ls-query "Queue = 'licensing' AND Resolved <
-;; '2015-10-02' AND Resolved > '2015-09-28' AND Status = 'resolved'")
-;;
-;; NOTE!!! rt-liberation already supports "temporal" predicates, but I
-;; need to add `resolved' ("Resolved") as one of them and check that
-;; it works.
-;;
-;; nil
-;;
+(defun rt-liberation-report-resolved-interval (rt-queue start-date end-date)
+  "Return tickets resolved between START-DATE and END-DATE.
+
+The tickets must have their current status be Resolved in order
+to be returned by this function. If no tickets match the query,
+return `nil'."
+  (rt-liber-rest-run-show-base-query
+   (rt-liber-rest-run-ls-query
+    (rt-liber-compile-query
+     (and (queue    rt-queue)
+	  (resolved start-date end-date)
+	  (status   "resolved"))))))
+
+;; (rt-liberation-report-resolved-interval "licensing" "2015-09-18" "2015-09-17")
+
+
 ;; ((("TimeLeft" . "0")
 ;;   ("TimeWorked" . "0")
 ;;   ("TimeEstimated" . "0")
