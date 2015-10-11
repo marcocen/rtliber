@@ -52,6 +52,9 @@
 (defvar rt-liber-created-string "Created"
   "String representation of \"created\" query tag.")
 
+(defvar rt-liber-resolved-string "Resolved"
+  "String representation of \"resolved\" query tag.")
+
 (defvar rt-liber-base-url ""
   "Base url for ticket display.")
 
@@ -244,7 +247,7 @@ This variable is made buffer local for the ticket history")
 		   email-address)))
 (defun rt-liber-time-p (sym)
   "Return t if SYM is a temporal attribute, otherwise nil."
-  (member sym '(created lastupdated)))
+  (member sym '(created lastupdated resolved)))
 (defun rt-liber-negation-p (sym)
   (member sym '(not)))
 
@@ -291,7 +294,8 @@ AFTER  date after predicate."
 	;; time
 	((rt-liber-time-p query)
 	 `,(cond ((equal query 'created) rt-liber-created-string)
-		 ((equal query 'lastupdated) rt-liber-lastupdated-string)))
+		 ((equal query 'lastupdated) rt-liber-lastupdated-string)
+		 ((equal query 'resolved) rt-liber-resolved-string)))
 	((and (listp query)
 	      (rt-liber-time-p (car query)))
 	 `(rt-liber-make-interval
