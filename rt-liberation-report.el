@@ -1,4 +1,4 @@
-;;; rt-report.el --- Free from RT
+;;; rt-liberation-report.el --- Free from RT
 
 ;; Copyright (C) 2015  Yoni Rabkin
 ;;
@@ -32,8 +32,70 @@
 
 (require 'rt-liberation-rest)
 
+;; This query works for a single day _BUT_ only if `resolved' is added
+;; as a `rt-liber-attrib-p'. The `nil' is the result when there are no
+;; tickets to return and the list is what comes back when tickets are
+;; found.
+;;
+;; (rt-liber-rest-run-show-base-query
+;;  (rt-liber-rest-run-ls-query
+;;   (rt-liber-compile-query
+;;    (and (queue    "licensing")
+;; 	(resolved "2015-10-09")
+;; 	(status   "resolved")))))
+;;
+;; However, note that the following inequalities work too and would be
+;; the right way to do the query:
+;;
+;; (rt-liber-rest-run-ls-query "Queue = 'licensing' AND Resolved <
+;; '2015-10-02' AND Resolved > '2015-09-28' AND Status = 'resolved'")
+;;
+;; NOTE!!! rt-liberation already supports "temporal" predicates, but I
+;; need to add `resolved' ("Resolved") as one of them and check that
+;; it works.
+;;
+;; nil
+;;
+;; ((("TimeLeft" . "0")
+;;   ("TimeWorked" . "0")
+;;   ("TimeEstimated" . "0")
+;;   ("Told" . "Thu Oct 08 00:53:59 2015")
+;;   ("Resolved" . "Thu Oct 08 00:53:59 2015")
+;;   ("Due" . "Not set")
+;;   ("Started" . "Wed Oct 07 06:52:03 2015")
+;;   ("Starts" . "Not set")
+;;   ("Created" . "Wed Oct 07 06:39:22 2015")
+;;   ("Requestors" . "ian.macintosh@gtxweb.uk")
+;;   ("FinalPriority" . "0")
+;;   ("InitialPriority" . "0")
+;;   ("Priority" . "0")
+;;   ("Status" . "resolved")
+;;   ("Subject" . "Badly worded and misleading paragraph")
+;;   ("Creator" . "ian.macintosh@gtxweb.uk")
+;;   ("Owner" . "jgay@fsf.org")
+;;   ("Queue" . "licensing")
+;;   ("id" . "ticket/1052419"))
+;;  (("TimeLeft" . "0")
+;;   ("TimeWorked" . "0")
+;;   ("TimeEstimated" . "0")
+;;   ("Told" . "Thu Oct 08 07:54:47 2015")
+;;   ("Resolved" . "Thu Oct 08 07:54:47 2015")
+;;   ("Due" . "Not set")
+;;   ("Started" . "Wed Oct 07 12:03:20 2015")
+;;   ("Starts" . "Not set")
+;;   ("Created" . "Mon Sep 21 13:33:24 2015")
+;;   ("Requestors" . "juan.balderas.0@gmail.com")
+;;   ("FinalPriority" . "0")
+;;   ("InitialPriority" . "0")
+;;   ("Priority" . "0")
+;;   ("Status" . "resolved")
+;;   ("Subject" . "Softare donation to FSF")
+;;   ("Creator" . "juan.balderas.0@gmail.com")
+;;   ("Owner" . "donald")
+;;   ("Queue" . "licensing")
+;;   ("id" . "ticket/1048183")))
 
 
 (provide 'rt-report)
 
-;;; rt-report.el ends here.
+;;; rt-liberation-report.el ends here.
