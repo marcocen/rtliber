@@ -435,12 +435,6 @@ AFTER  date after predicate."
 ;;; Ticket retriever
 ;;; --------------------------------------------------------
 
-;; Implementation note: Working with 3.8.1 or 3.8.2 of the RT CLI
-;; makes a huge difference here. 3.8.1 returns a kind of listing of
-;; the history ID objects which requires further processing. 3.8.2 on
-;; the other hand returns the contents of all the ticket history
-;; objects in one fell swoop.
-
 (defun rt-liber-create-ticket-history-string (ticket-id)
   "Create a query for TICKET-ID to retrieve all history objects."
   (concat "ticket/" ticket-id "/history/id"))
