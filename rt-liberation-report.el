@@ -57,7 +57,7 @@ return `nil'."
   "Convert TICKET-ALIST to set format."
   (let ((date-resolved (cdr (assoc "Resolved" ticket-alist)))
 	(owner         (cdr (assoc "Owner" ticket-alist))))
-    `(,(format-time-string "%d-%m-%Y" (date-to-time date-resolved))
+    `(,(format-time-string "%s" (date-to-time date-resolved))
       . ,owner)))
 
 (defun rt-liber-report-scan-interval (interval)
@@ -115,8 +115,10 @@ return `nil'."
 (defun rt-liber-report (rt-queue start-date end-date)
   "Print tickets resolved between START-DATE and END-DATE."
   (let ((tickets (rt-liber-report-scan-interval
-		  (rt-liber-report-get-interval
-		   rt-queue start-date end-date)))
+		  ;; (rt-liber-report-get-interval
+		  ;;  rt-queue start-date end-date)
+		  __foo
+		  ))
 	by-date by-owner
 	by-date-out
 	by-owner-out
