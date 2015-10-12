@@ -50,10 +50,11 @@ return `nil'."
    (rt-liber-rest-run-ls-query
     (rt-liber-compile-query
      (and (queue    rt-queue)
-	  (resolved start-date end-date)
+	  (resolved end-date start-date)
 	  (status   "resolved"))))))
 
 (defun rt-liber-report-scan-ticket (ticket-alist)
+  "Convert TICKET-ALIST to set format."
   (let ((date-resolved (cdr (assoc "Resolved" ticket-alist)))
 	(owner         (cdr (assoc "Owner" ticket-alist))))
     `(,(format-time-string "%d-%m-%Y" (date-to-time date-resolved))
@@ -74,6 +75,7 @@ return `nil'."
     r))
 
 (defun rt-liber-report-count (f l)
+  "Apply function F to list L to produce a count."
   (let (out)
     (while l
       (let* ((head (car l))
@@ -84,13 +86,23 @@ return `nil'."
       (setq l (cdr l)))
     out))
 
+(defun rt-liber-report-count-total (l)
+  (let ((c 0))
+    (while l
+      (setq c (+ c (cdr (car l))))
+      (setq l (cdr l)))
+    c))
+
 (defun rt-liber-report-count-by-date (l)
+  "Count resolved tickets by date."
   (rt-liber-report-count #'car l))
 
 (defun rt-liber-report-count-by-owner (l)
+  "Count resolved tickets by owner."
   (rt-liber-report-count #'cdr l))
 
 (defun rt-liber-report-print-csv (header l)
+  "Output list L in a CSV format, starting with HEADER."
   (let (out)
     (with-temp-buffer
       (insert (format "\n%s\n" header))
@@ -101,12 +113,14 @@ return `nil'."
     out))
 
 (defun rt-liber-report (rt-queue start-date end-date)
+  "Print tickets resolved between START-DATE and END-DATE."
   (let ((tickets (rt-liber-report-scan-interval
 		  (rt-liber-report-get-interval
-		   rt-queue end-date start-date)))
+		   rt-queue start-date end-date)))
 	by-date by-owner
 	by-date-out
-	by-owner-out)
+	by-owner-out
+	total)
     (when (not tickets)
       (error (concat "no tickets in interval between "
 		     start-date " and " end-date)))
@@ -119,9 +133,12 @@ return `nil'."
 	   by-owner
 	   #'(lambda (a b)
 	       (> (cdr a) (cdr b)))))
+    ;; count total
+    (setq total (rt-liber-report-count-total by-owner))
     ;; print
     (insert (rt-liber-report-print-csv "date, resolved" by-date))
-    (insert (rt-liber-report-print-csv "owner, resolved" by-owner))))
+    (insert (rt-liber-report-print-csv "owner, resolved" by-owner))
+    (insert (format "\ntotal tickets resolved: %d\n" total))))
 
 
 (provide 'rt-report)
