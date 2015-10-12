@@ -73,32 +73,55 @@ return `nil'."
 		      (string-lessp (car a) (car b)))))
     r))
 
-(defun rt-liber-report-count-by-date (l)
-  (let ((h (make-hash-table :test 'equal)))
+(defun rt-liber-report-count (f l)
+  (let (out)
     (while l
-      (let ((d (or (gethash (caar l) h) 0)))
-	(puthash (caar l) (+ d 1) h))
+      (let* ((head (car l))
+	     (old-value (cdr (assoc (funcall f head) out))))
+	(if old-value
+	    (setcdr (assoc (funcall f head) out) (+ old-value 1))
+	  (setq out (append out `((,(funcall f head) . 1))))))
       (setq l (cdr l)))
-    h))
+    out))
+
+(defun rt-liber-report-count-by-date (l)
+  (rt-liber-report-count #'car l))
 
 (defun rt-liber-report-count-by-owner (l)
-  (let ((h (make-hash-table :test 'equal)))
-    (while l
-      (let ((d (or (gethash (cdar l) h) 0)))
-	(puthash (cdar l) (+ d 1) h))
-      (setq l (cdr l)))
-    h))
+  (rt-liber-report-count #'cdr l))
+
+(defun rt-liber-report-print-csv (header l)
+  (let (out)
+    (with-temp-buffer
+      (insert (format "\n%s\n" header))
+      (dolist (entry l)
+	(insert
+	 (format "%s, %s\n" (car entry) (cdr entry))))
+      (setq out (buffer-string)))
+    out))
 
 (defun rt-liber-report (rt-queue start-date end-date)
   (let ((tickets (rt-liber-report-scan-interval
 		  (rt-liber-report-get-interval
-		   rt-queue start-date end-date)))
-	by-date by-owner)
+		   rt-queue end-date start-date)))
+	by-date by-owner
+	by-date-out
+	by-owner-out)
     (when (not tickets)
       (error (concat "no tickets in interval between "
 		     start-date " and " end-date)))
+    ;; collate
     (setq by-date  (rt-liber-report-count-by-date tickets)
-	  by-owner (rt-liber-report-count-by-owner tickets))))
+	  by-owner (rt-liber-report-count-by-owner tickets))
+    ;; rank owners by resolved tickets
+    (setq by-owner
+	  (sort
+	   by-owner
+	   #'(lambda (a b)
+	       (> (cdr a) (cdr b)))))
+    ;; print
+    (insert (rt-liber-report-print-csv "date, resolved" by-date))
+    (insert (rt-liber-report-print-csv "owner, resolved" by-owner))))
 
 
 (provide 'rt-report)
