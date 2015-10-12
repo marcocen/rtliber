@@ -32,12 +32,20 @@
 
 (require 'rt-liberation-rest)
 
-(defun rt-liberation-report-resolved-interval (rt-queue start-date end-date)
+(defvar rt-liber-report-csv-header
+  '("date" "tickets resolved")
+  "Headers for comma separated value output.")
+
+(defun rt-liber-report-get-interval (rt-queue start-date end-date)
   "Return tickets resolved between START-DATE and END-DATE.
 
 The tickets must have their current status be Resolved in order
 to be returned by this function. If no tickets match the query,
 return `nil'."
+  (when (or (not (stringp rt-queue))
+	    (not (stringp start-date))
+	    (not (stringp end-date)))
+    (error "bad argument/s"))
   (rt-liber-rest-run-show-base-query
    (rt-liber-rest-run-ls-query
     (rt-liber-compile-query
@@ -45,47 +53,52 @@ return `nil'."
 	  (resolved start-date end-date)
 	  (status   "resolved"))))))
 
-;; (rt-liberation-report-resolved-interval "licensing" "2015-09-18" "2015-09-17")
+(defun rt-liber-report-scan-ticket (ticket-alist)
+  (let ((date-resolved (cdr (assoc "Resolved" ticket-alist)))
+	(owner         (cdr (assoc "Owner" ticket-alist))))
+    `(,(format-time-string "%d-%m-%Y" (date-to-time date-resolved))
+      . ,owner)))
 
+(defun rt-liber-report-scan-interval (interval)
+  "Convert the list of tickets into an ordered format."
+  (when (not interval)
+    (error "no tickets in interval"))
+  (let ((l (copy-tree interval))
+	(r nil))
+    (while l
+      (setq r (append r `(,(rt-liber-report-scan-ticket (car l)))))
+      (setq l (cdr l)))
+    (setq r (sort r
+		  #'(lambda (a b)
+		      (string-lessp (car a) (car b)))))
+    r))
 
-;; ((("TimeLeft" . "0")
-;;   ("TimeWorked" . "0")
-;;   ("TimeEstimated" . "0")
-;;   ("Told" . "Thu Oct 08 00:53:59 2015")
-;;   ("Resolved" . "Thu Oct 08 00:53:59 2015")
-;;   ("Due" . "Not set")
-;;   ("Started" . "Wed Oct 07 06:52:03 2015")
-;;   ("Starts" . "Not set")
-;;   ("Created" . "Wed Oct 07 06:39:22 2015")
-;;   ("Requestors" . "ian.macintosh@gtxweb.uk")
-;;   ("FinalPriority" . "0")
-;;   ("InitialPriority" . "0")
-;;   ("Priority" . "0")
-;;   ("Status" . "resolved")
-;;   ("Subject" . "Badly worded and misleading paragraph")
-;;   ("Creator" . "ian.macintosh@gtxweb.uk")
-;;   ("Owner" . "jgay@fsf.org")
-;;   ("Queue" . "licensing")
-;;   ("id" . "ticket/1052419"))
-;;  (("TimeLeft" . "0")
-;;   ("TimeWorked" . "0")
-;;   ("TimeEstimated" . "0")
-;;   ("Told" . "Thu Oct 08 07:54:47 2015")
-;;   ("Resolved" . "Thu Oct 08 07:54:47 2015")
-;;   ("Due" . "Not set")
-;;   ("Started" . "Wed Oct 07 12:03:20 2015")
-;;   ("Starts" . "Not set")
-;;   ("Created" . "Mon Sep 21 13:33:24 2015")
-;;   ("Requestors" . "juan.balderas.0@gmail.com")
-;;   ("FinalPriority" . "0")
-;;   ("InitialPriority" . "0")
-;;   ("Priority" . "0")
-;;   ("Status" . "resolved")
-;;   ("Subject" . "Softare donation to FSF")
-;;   ("Creator" . "juan.balderas.0@gmail.com")
-;;   ("Owner" . "donald")
-;;   ("Queue" . "licensing")
-;;   ("id" . "ticket/1048183")))
+(defun rt-liber-report-count-by-date (l)
+  (let ((h (make-hash-table :test 'equal)))
+    (while l
+      (let ((d (or (gethash (caar l) h) 0)))
+	(puthash (caar l) (+ d 1) h))
+      (setq l (cdr l)))
+    h))
+
+(defun rt-liber-report-count-by-owner (l)
+  (let ((h (make-hash-table :test 'equal)))
+    (while l
+      (let ((d (or (gethash (cdar l) h) 0)))
+	(puthash (cdar l) (+ d 1) h))
+      (setq l (cdr l)))
+    h))
+
+(defun rt-liber-report (rt-queue start-date end-date)
+  (let ((tickets (rt-liber-report-scan-interval
+		  (rt-liber-report-get-interval
+		   rt-queue start-date end-date)))
+	by-date by-owner)
+    (when (not tickets)
+      (error (concat "no tickets in interval between "
+		     start-date " and " end-date)))
+    (setq by-date  (rt-liber-report-count-by-date tickets)
+	  by-owner (rt-liber-report-count-by-owner tickets))))
 
 
 (provide 'rt-report)
