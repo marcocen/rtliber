@@ -66,6 +66,10 @@ return `nil'."
     (error "no tickets in interval"))
   (let ((l (copy-tree interval))
 	(r nil))
+
+    ;; the solution is to first convert to seconds, then sort, then
+    ;; finally convert to YYYY-MM-DD format
+    
     (while l
       (setq r (append r `(,(rt-liber-report-scan-ticket (car l)))))
       (setq l (cdr l)))
