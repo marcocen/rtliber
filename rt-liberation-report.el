@@ -57,8 +57,7 @@ return `nil'."
   "Convert TICKET-ALIST to set format."
   (let ((date-resolved (cdr (assoc "Resolved" ticket-alist)))
 	(owner         (cdr (assoc "Owner" ticket-alist))))
-    `(,(format-time-string "%s" (date-to-time date-resolved))
-      . ,owner)))
+    `(,(float-time (date-to-time date-resolved)) . ,owner)))
 
 (defun rt-liber-report-scan-interval (interval)
   "Convert the list of tickets into an ordered format."
@@ -66,16 +65,17 @@ return `nil'."
     (error "no tickets in interval"))
   (let ((l (copy-tree interval))
 	(r nil))
-
-    ;; the solution is to first convert to seconds, then sort, then
-    ;; finally convert to YYYY-MM-DD format
-    
     (while l
       (setq r (append r `(,(rt-liber-report-scan-ticket (car l)))))
       (setq l (cdr l)))
+    ;; sort the list when it is still in seconds format
     (setq r (sort r
 		  #'(lambda (a b)
-		      (string-lessp (car a) (car b)))))
+		      (< (car a) (car b)))))
+    ;; change the sorted list by day-date format, so that we can
+    ;; pigeon-hole count by day later on
+    (dolist (e r)
+      (setcar e (format-time-string "%Y-%m-%d" (car e))))
     r))
 
 (defun rt-liber-report-count (f l)
@@ -119,10 +119,8 @@ return `nil'."
 (defun rt-liber-report (rt-queue start-date end-date)
   "Print tickets resolved between START-DATE and END-DATE."
   (let ((tickets (rt-liber-report-scan-interval
-		  ;; (rt-liber-report-get-interval
-		  ;;  rt-queue start-date end-date)
-		  __foo
-		  ))
+		  (rt-liber-report-get-interval
+		   rt-queue start-date end-date)))
 	by-date by-owner
 	by-date-out
 	by-owner-out
