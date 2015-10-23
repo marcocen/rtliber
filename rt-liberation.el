@@ -1084,6 +1084,29 @@ string then that will be the name of the new buffer."
      (rt-liber-browser-with-message "no results from query"
 				    query new))))
 
+(defun rt-liber-print-query (query &optional ticket-redraw-f)
+  "Run QUERY against the server and return a string.
+
+The optional function TICKET-REDRAW-F will be bound to
+`rt-liber-custom-ticket-redraw-function' for the duration of the
+query output. Note that unlike the browser output, the string
+returned as no associated text properties."
+  (let ((rt-liber-custom-ticket-redraw-function
+	 (or ticket-redraw-f
+	     rt-liber-custom-ticket-redraw-function))
+	(out ""))
+    (condition-case excep
+	(with-temp-buffer
+	  (rt-liber-ticketlist-browser-redraw
+	   (rt-liber-rest-run-show-base-query
+	    (rt-liber-rest-run-ls-query query))
+	   query)
+	  (setq out (buffer-substring-no-properties 1 (- (point-max) 1))))
+      (rt-liber-no-result-from-query-error
+       (rt-liber-browser-with-message "no results from query"
+				      query)))
+    out))
+
 
 ;;; --------------------------------------------------------
 ;;; Major mode definitions
