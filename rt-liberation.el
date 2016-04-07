@@ -396,7 +396,7 @@ AFTER  date after predicate."
   "Parser function for ticket list."
   (let (ticketbase-list ticketbase (continue t))
     (while (save-excursion
-	     (re-search-forward "[A-Za-z]" (point-max) t)) ; really?
+	     (re-search-forward "^id:" (point-max) t))
       (while (and continue
 		  (re-search-forward
 		   "^\\(\\([\.{} #[:alpha:]]+\\): \\(.*\\)\\)$\\|^--$"
