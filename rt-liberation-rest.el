@@ -123,9 +123,11 @@
 	   (url-retrieve-synchronously url))
 	  str)
       (setq str
+	    (decode-coding-string
 	    (with-current-buffer response
 	      (buffer-substring-no-properties (point-min)
-					      (point-max))))
+					      (point-max)))
+	    'utf-8))
       
       (rt-liber-rest-write-debug
        (format "outgoing rest call -->\n%s\n<-- incoming\n%s\n" url str))
