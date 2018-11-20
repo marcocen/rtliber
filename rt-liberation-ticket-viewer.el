@@ -39,7 +39,7 @@ Returns a list of history entries."
 	     (re-search-forward "^#" (point-max) t))
       (while (and continue
 		  (re-search-forward
-		   "^\\(\\([\.{} #[:alpha:]]+\\): \\(.*\\)\\)$\\|^--$"
+		   "^\\(\\([\.{}#[:alpha:]]+\\): \\(.*\\)\\)$\\|^--$"
 		   (point-max) t))
 	(cond
 	 ((string= (match-string-no-properties 0) "--")
@@ -55,7 +55,7 @@ Returns a list of history entries."
 			    (buffer-substring-no-properties
 			     start
 			     (or (progn (re-search-forward
-					 "^\\(\\([\.{} #[:alpha:]]+\\): \\(.*\\)\\)$\\|^--$"
+					 "^\\(\\([\.{}#[:alpha:]]+\\): \\(.*\\)\\)$\\|^--$"
 					 (point-max) t)
 					(beginning-of-line)
 					(point))
