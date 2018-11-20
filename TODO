@@ -1,0 +1,27 @@
+-*- org -*-
+
+* DONE Hide useless transactions in each Ticket Viewer
+* TAB to search for rt# (#65444) ENTER to go to ticket
+* Fill paragraphs in Content
+* Handle attachments in Ticket Viewer
+* Implement ticket operations (take, resolve, etc) in Ticket Viewer
+* Implement more operations (add reference, merge, move to queue, etc)
+* Bugs:
+** `m' in browser is documented but not implemented.
+** Sec. 8 (Batch Operations)
+   require line is wrong
+
+
+
+
+   
+
+
+
+
+
+  
+
+
+
+

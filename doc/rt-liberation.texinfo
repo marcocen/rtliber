@@ -147,6 +147,19 @@ which version of RT the server is running:
       rt-liber-rt-version "4.2.4")
 @end lisp
 
+In addition, specify your username and password:
+
+@lisp
+(setq rt-liber-rest-username "someuser"
+      rt-liber-rest-pasword  "somepassword")
+@end lisp
+
+Alternatively, you can make rt-liberation use the auth-source library by
+setting the variable @var{rt-liber-rest-use-auth-source-p}. This way
+Emacs will prompt you for your password. You can also store the
+credentials in the ~/.authinfo.gpg (GPG encrypted) or ~/.authinfo files.
+@xref{Top,,,auth} for details.
+
 rt-liberation can issue a command to ``take'' a ticket (that is,
 assign it to yourself). For this the variable @var{rt-liber-username}
 must be set:

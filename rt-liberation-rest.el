@@ -31,7 +31,17 @@
 
 (require 'url)
 (require 'url-util)
+(require 'auth-source)
 
+(defgroup rt-liber-rest nil
+  "Interface to the RT REST API."
+  :prefix "rt-liber-rest-"
+  :group 'rt-liber)
+
+(defcustom rt-liber-rest-use-auth-source-p nil
+  "Whether to use auth-source for authentication."
+  :type 'boolean
+  :group 'rt-liber-rest)
 
 (defvar rt-liber-rest-debug-buffer-name "*rt-liber-rest debug log*"
   "Buffer name of debug capture.")
@@ -65,73 +75,79 @@
       (goto-char (point-max))
       (insert str))))
 
-(defun rt-liber-rest-search-string (scheme url username password query)
+(defun rt-liber-rest-search-string (scheme url query)
   "Return the search query string."
-  (let ((user (url-encode-url username))
-	(pass (url-encode-url password)))
-    (concat scheme
-	    "://"
-	    url
-	    "/REST/1.0/search/ticket" "?"
-	    "user=" user "&"
-	    "pass=" pass "&"
-	    "query=" (url-encode-url query) "&"
-	    "format=i" "&"
-	    "orderby=+Created")))
+  (concat scheme
+	  "://"
+	  url
+	  "/REST/1.0/search/ticket" "?"
+	  "query=" (url-encode-url query) "&"
+	  "format=i" "&"
+	  "orderby=+Created"))
 
-(defun rt-liber-rest-show-string (scheme url ticket-id-list username password query)
+(defun rt-liber-rest-show-string (scheme url ticket-id-list query)
   "Return the ticket show string."
-  (let ((user (url-encode-url username))
-	(pass (url-encode-url password)))
-    (concat scheme
-	    "://"
-	    url
-	    "/REST/1.0/ticket/" ticket-id-list
-	    "/show" "?"
-	    "user=" user "&"
-	    "pass=" pass "&")))
+  (concat scheme
+	  "://"
+	  url
+	  "/REST/1.0/ticket/" ticket-id-list
+	  "/show"))
 
-(defun rt-liber-rest-history-string (scheme url ticket-id username password)
+(defun rt-liber-rest-history-string (scheme url ticket-id)
   "Return the ticket show string."
-  (let ((user (url-encode-url username))
-	(pass (url-encode-url password)))
-    (concat scheme
-	    "://"
-	    url
-	    "/REST/1.0/ticket/" ticket-id
-	    "/history" "?"
-	    "format=l" "&"
-	    "user=" user "&"
-	    "pass=" pass)))
+  (concat scheme
+	  "://"
+	  url
+	  "/REST/1.0/ticket/" ticket-id
+	  "/history" "?"
+	  "format=l"))
 
-(defun rt-liber-rest-command-edit-string (scheme url ticket-id username password)
+(defun rt-liber-rest-command-edit-string (scheme url ticket-id)
   "Return the ticket edit string."
-  (let ((user (url-encode-url username))
-	(pass (url-encode-url password)))
-    (concat scheme
-	    "://"
-	    url
-	    "/REST/1.0/ticket/" ticket-id
-	    "/edit" "?"
-	    "user=" user "&"
-	    "pass=" pass)))
+  (concat scheme
+	  "://"
+	  url
+	  "/REST/1.0/ticket/" ticket-id
+	  "/edit"))
 
-(defun rt-liber-rest-call (url)
+(defun rt-liber-rest-get-auth-source-secret (username)
+  "Returns the password for USERNAME, using auth-source."
+  (let* ((auth-source-creation-prompts
+	  '((user . "RT user at %h: ")
+	    (secret . "RT password for %u@%h: ")))
+	 (auth (nth 0 (auth-source-search :max 1
+					  :host (car (split-string rt-liber-rest-url "/"))
+					  :user username
+					  :require '(:user :secret)
+					  :create t)))
+	 (secret (plist-get auth :secret)))
+    (if (functionp secret)
+	(funcall secret)
+      secret)))
+
+(defun rt-liber-rest-call (url username)
   "Perform a REST call with URL."
-  (let ((url-request-method "POST"))
-    (let ((response
-	   (url-retrieve-synchronously url))
-	  str)
-      (setq str
-	    (decode-coding-string
-	    (with-current-buffer response
-	      (buffer-substring-no-properties (point-min)
-					      (point-max)))
-	    'utf-8))
-      
-      (rt-liber-rest-write-debug
-       (format "outgoing rest call -->\n%s\n<-- incoming\n%s\n" url str))
-      str)))
+  (let* ((user (url-encode-url username))
+	 (password (url-encode-url
+		    (if rt-liber-rest-use-auth-source-p
+			(rt-liber-rest-get-auth-source-secret username)
+		      rt-liber-rest-password)))
+	 (url-request-method "POST")
+	 (url-request-extra-headers
+	  '(("Content-Type" . "application/x-www-form-urlencoded")))
+	 (url-request-data (concat "user=" user "&" "pass=" password))
+	 (response (url-retrieve-synchronously url))
+	 str)
+    (setq str
+	  (decode-coding-string
+	   (with-current-buffer response
+	     (buffer-substring-no-properties (point-min)
+					     (point-max)))
+	   'utf-8))
+
+    (rt-liber-rest-write-debug
+     (format "outgoing rest call -->\n%s\n<-- incoming\n%s\n" url str))
+    str))
 
 (defun rt-liber-rest-query-runner (op query-string)
   "Run OP on QUERY-STRING."
@@ -142,24 +158,21 @@
 	 (rt-liber-rest-call
 	  (rt-liber-rest-search-string rt-liber-rest-scheme
 				       rt-liber-rest-url
-				       rt-liber-rest-username
-				       rt-liber-rest-password
-				       query-string)))
+				       query-string)
+	  rt-liber-rest-username))
 	((string= op "show")
 	 (rt-liber-rest-call
 	  (rt-liber-rest-show-string rt-liber-rest-scheme
 				     rt-liber-rest-url
 				     query-string
-				     rt-liber-rest-username
-				     rt-liber-rest-password
-				     query-string)))
+				     query-string)
+	  rt-liber-rest-username))
 	((string= op "history")
 	 (rt-liber-rest-call
 	  (rt-liber-rest-history-string rt-liber-rest-scheme
 					rt-liber-rest-url
-					query-string
-					rt-liber-rest-username
-					rt-liber-rest-password)))
+					query-string)
+	  rt-liber-rest-username))
 	(t (error "unknown op [%s]" op))))
 
 (defun rt-liber-rest-parse-http-header ()
@@ -260,9 +273,7 @@
 	     (rt-liber-rest-command-edit-string
 	      rt-liber-rest-scheme
 	      rt-liber-rest-url
-	      ticket-id
-	      rt-liber-rest-username
-	      rt-liber-rest-password)))
+	      ticket-id)))
       (rt-liber-rest-handle-response response-buffer)))
   (message "edit command ended at %s" (current-time-string)))
 

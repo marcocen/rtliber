@@ -38,6 +38,8 @@
 (require 'cl)
 
 (require 'rt-liberation-rest)
+(require 'rt-liberation-ticket-viewer)
+
 
 (defgroup rt-liber nil
   "*rt-liberation, the Emacs interface to RT"
@@ -85,9 +87,14 @@
 (defvar rt-liber-content-regexp "^Content:.*$"
   "Regular expression for section headers.")
 
+;; (defvar rt-liber-correspondence-regexp
+;;   "^Type: \\(EmailRecord\\|CommentEmailRecord\\|Correspond\\)"
+;;   "Regular expression for correspondence sections.")
+
 (defvar rt-liber-correspondence-regexp
-  "^Type: \\(EmailRecord\\|CommentEmailRecord\\|Correspond\\)"
+  "\\(Correspondence\\|Comments\\) added by"
   "Regular expression for correspondence sections.")
+
 
 (defvar rt-liber-rt-version "X.Y.Z"
   "Version of the RT CLI.")
@@ -159,16 +166,17 @@ function returns a truth value.")
     (t (:background "Black")))
   "Face for high priority tickets in browser buffer.")
 
-(defconst rt-liber-viewer-font-lock-keywords
-  (let ((header-regexp (regexp-opt '("id: " "Ticket: " "TimeTaken: "
-				     "Type: " "Field: " "OldValue: "
-				     "NewValue: " "Data: "
-				     "Description: " "Created: "
-				     "Creator: " "Attachments: ") t)))
-    (list
-     (list (concat "^" header-regexp ".*$") 0
-	   'font-lock-comment-face)))
-  "Expressions to font-lock for RT ticket viewer.")
+(defconst rt-liber-viewer-font-lock-quoted
+  (list (list "^[> ]+.*$") 0 'font-lock-comment-face))
+  ;; (let ((header-regexp (regexp-opt '("id: " "Ticket: " "TimeTaken: "
+  ;; 				     "Type: " "Field: " "OldValue: "
+  ;; 				     "NewValue: " "Data: "
+  ;; 				     "Description: " "Created: "
+  ;; 				     "Creator: " "Attachments: ") t)))
+  ;;   (list
+  ;;    (list (concat "^" header-regexp ".*$") 0
+  ;; 	   'font-lock-comment-face)))
+  ;; "Expressions to font-lock for RT ticket viewer.")
 
 (defvar rt-liber-browser-do-refresh t
   "When t, run `rt-liber-browser-refresh' otherwise disable it.")
@@ -567,18 +575,22 @@ AFTER  date after predicate."
 (defun rt-liber-next-section-in-viewer ()
   "Move point to next section."
   (interactive)
-  (forward-line 1)
-  (when (not (re-search-forward rt-liber-content-regexp (point-max) t))
-    (message "no next section"))
-  (goto-char (point-at-bol)))
+  (let ((next (next-single-property-change (point) 'rt-entry)))
+    (when next (goto-char next))))
+  ;; (forward-line 1)
+  ;; (when (not (re-search-forward rt-liber-content-regexp (point-max) t))
+  ;;   (message "no next section"))
+  ;; (goto-char (point-at-bol)))
 
 (defun rt-liber-previous-section-in-viewer ()
   "Move point to previous section."
   (interactive)
-  (forward-line -1)
-  (when (not (re-search-backward rt-liber-content-regexp (point-min) t))
-    (message "no previous section"))
-  (goto-char (point-at-bol)))
+  (let ((prev (previous-single-property-change (point) 'rt-entry)))
+    (when prev (goto-char prev))))
+;; (forward-line -1)
+  ;; (when (not (re-search-backward rt-liber-content-regexp (point-min) t))
+  ;;   (message "no previous section"))
+  ;; (goto-char (point-at-bol)))
 
 (defconst rt-liber-viewer-mode-map
   (let ((map (make-sparse-keymap)))
@@ -607,7 +619,7 @@ AFTER  date after predicate."
 \\{rt-liber-viewer-mode-map}"
   (set
    (make-local-variable 'font-lock-defaults)
-   '((rt-liber-viewer-font-lock-keywords)))
+   '((rt-liber-viewer-font-lock-quoted)))
   (set (make-local-variable 'revert-buffer-function)
        'rt-liber-refresh-ticket-history)
   (set (make-local-variable 'buffer-stale-function)

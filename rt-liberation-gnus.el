@@ -84,18 +84,16 @@ OPTIONS association list of options.
 	(contents         (cdr (assoc 'contents options)))
 	(no-comment       (cdr (assoc 'no-comment options)))
 	(rt-liber-gnus-p  t)
-	(comment-start    ">")
 	message-text)
     ;; prepare the text
     (with-temp-buffer
       (when top-matter
 	(insert top-matter))
       (when contents
-	(newline 2)
-	(insert contents))
-      (when (not no-comment)
-	(comment-region (point-min) (point-max)))
-      (setq message-text (buffer-substring (point-min) (point-max))))
+	(insert contents)
+	;; (when (not no-comment)
+	;;   (comment-region start-of-comment (point-max))))
+      (setq message-text (buffer-substring (point-min) (point-max)))))
     ;; launch into gnus and prepare the mail message
     (when (not (gnus-alive-p))
       (error "Gnus has been shut down"))
@@ -113,33 +111,76 @@ OPTIONS association list of options.
     (save-excursion
       (insert message-text))))
 
+;; (defun rt-liber-gnus-content-to-string ()
+;;   "Return the current content section as a string"
+;;   (rt-liber-gnus-with-ticket-buffer
+;;    (goto-char (point-at-eol))
+;;    (when
+;;        (not
+;; 	(or (re-search-backward rt-liber-content-regexp (point-min) t)
+;; 	    (re-search-forward rt-liber-content-regexp (point-max) t)))
+;;      (error "no content sections found"))
+;;    (save-excursion
+;;      (goto-char (point-at-bol))
+;;      (re-search-forward "^Content: " (point-at-eol) nil)
+;;      (let ((start (point))
+;; 	   text)
+;;        (re-search-forward "^[[:alpha:]]+:" (point-max) t)
+;;        (goto-char (point-at-bol))
+;;        (when (= 0 (length (buffer-substring-no-properties start (point))))
+;; 	 (error "empty content section"))
+;;        (setq text (buffer-substring-no-properties start (point)))
+;;        (with-temp-buffer
+;; 	 (insert text)
+;; 	 (goto-char (point-min))
+;; 	 (while (re-search-forward "^[ ]+" (point-max) t)
+;; 	   (replace-match ""))
+;; 	 (whitespace-cleanup)
+;; 	 (setq text (buffer-substring (point-min) (point-max))))
+;;        text))))
+
 (defun rt-liber-gnus-content-to-string ()
   "Return the current content section as a string"
+  ;; TODO: This is sooo broken
   (rt-liber-gnus-with-ticket-buffer
    (goto-char (point-at-eol))
    (when
        (not
-	(or (re-search-backward rt-liber-content-regexp (point-min) t)
-	    (re-search-forward rt-liber-content-regexp (point-max) t)))
+	(or (previous-single-property-change (point) 'rt-entry)
+	    (next-single-property-change (point) 'rt-entry)))
      (error "no content sections found"))
    (save-excursion
+     (goto-char (previous-single-property-change (point) 'rt-entry))
+     (next-line)
      (goto-char (point-at-bol))
-     (re-search-forward "^Content: " (point-at-eol) nil)
      (let ((start (point))
+	   (entry (get-text-property (point) 'rt-entry))
 	   text)
-       (re-search-forward "^[[:alpha:]]+:" (point-max) t)
+       (goto-char (or (re-search-forward "^[ ]*--[ ]*$" (point-max) t)
+		      (next-single-property-change (point) 'rt-entry)
+		      (point-max)))
        (goto-char (point-at-bol))
        (when (= 0 (length (buffer-substring-no-properties start (point))))
 	 (error "empty content section"))
        (setq text (buffer-substring-no-properties start (point)))
        (with-temp-buffer
-	 (insert text)
+	 (insert (concat "On " (format-time-string
+				rt-liber-browser-time-format-string
+				(date-to-time
+				 (concat (cdr (assoc "Created" entry)) " GMT")))
+			 " " (cdr (assoc "Creator" entry))
+			 " wrote:\n"))
+	 (let ((start-of-text (point))
+	       (comment-start ">"))
+	   (insert text)
+	   (comment-region start-of-text (point)))
 	 (goto-char (point-min))
 	 (while (re-search-forward "^[ ]+" (point-max) t)
 	   (replace-match ""))
 	 (whitespace-cleanup)
 	 (setq text (buffer-substring (point-min) (point-max))))
        text))))
+
 
 (defmacro rt-liber-gnus-with-ticket-buffer (&rest body)
   `(progn
