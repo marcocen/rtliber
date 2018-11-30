@@ -23,6 +23,60 @@
 
 ;;; Code:
 
+(defun rt-liber-ticker-viewer-highlight-string (str)
+  "Highlight a string, using bold face"
+  (put-text-property 0 (length str)
+		     'font-lock-face 'bold
+		     str)
+  str)
+
+
+(defun rt-liber-ticket-headers (ticket-alist)
+  "Return a string to show as header in ticket viewer."
+  (if (not ticket-alist)
+      (error "Not viewing a ticket!!"))
+  (let* ((id         (rt-liber-ticket-id-only ticket-alist))
+	 (subject    (cdr (assoc "Subject" ticket-alist)))
+	 (status     (cdr (assoc "Status" ticket-alist)))
+	 (queue      (cdr (assoc "Queue" ticket-alist)))
+	 ; People
+	 (owner      (rt-liber-ticket-owner-only ticket-alist))
+	 (requestors (cdr (assoc "Requestors" ticket-alist)))
+	 (cc    (cdr (assoc "CC" ticket-alist)))
+	 (admincc    (cdr (assoc "AdminCC" ticket-alist)))
+	 ; Dates
+	 (created    (format-time-string
+		      rt-liber-browser-time-format-string
+		      (date-to-time
+		       (cdr (assoc "Created" ticket-alist)))))
+	 (updated    (format-time-string
+		      rt-liber-browser-time-format-string
+		      (date-to-time
+		       (cdr (assoc "LastUpdated" ticket-alist)))))
+	 (resolved   (if (string= status "resolved")
+			 (format-time-string
+			  rt-liber-browser-time-format-string
+			  (date-to-time
+			   (cdr (assoc "Resolved" ticket-alist))))
+		       "N/A")))
+    (concat (rt-liber-ticker-viewer-highlight-string (concat "#" id ": " subject))
+	    "Basics:\n"
+	    "     Status: " status "\n"
+	    "      Queue: " queue "\n"
+
+	    "\nPeople:\n"
+	    "      Owner: " owner "\n"
+	    " Requestors: " requestors "\n"
+	    "         Cc: " cc "\n"
+	    "    AdminCC: " admincc "\n"
+
+	    "\nDates:\n"
+	    "    Created: " created "\n"
+	    "    Updated: " updated "\n"
+	    "   Resolved: " resolved "\n"
+    )))
+
+
 (defvar rt-liber-viewer-ticket-type-format
   '(("^\\(Create\\|Comment\\|Correspond\\)$" . "%r %u - %D\n%C\n--\n")
     ("^\\(EmailRecord\\|CommentEmailRecord\\|SetWatcher\\)$" . "")
@@ -126,9 +180,10 @@ Returns a list of history entries."
     format))
   
 
-(defun rt-liber-ticket-print-history (entries)
+(defun rt-liber-ticket-print-history (ticket-alist entries)
   "Print ticket history ENTRIES in the current buffer."
-  (insert "\n")
+  (insert (rt-liber-ticket-headers ticket-alist))
+  (insert "\n--\n")
   (dolist (entry entries)
     (let* ((entry-type (cdr (assoc "Type" entry)))
 	   (format-str (rt-liber-ticket-find-entry-format entry-type))
@@ -147,17 +202,16 @@ Returns a list of history entries."
   (goto-char (point-min)))
 
 
-(defun rt-liber-ticket-parse-history ()
+(defun rt-liber-ticket-parse-history (ticket-alist)
   "Parse ticket history in current buffer."
   (interactive)
   (goto-char (point-min))
   (let ((entries (rt-liber-ticket-viewer-parse-history))
 	(inhibit-read-only t))
     (erase-buffer)
-    (rt-liber-ticket-print-history (reverse entries))))
+    (rt-liber-ticket-print-history ticket-alist (reverse entries))))
 
-(add-hook 'rt-liber-viewer-hook 'rt-liber-ticket-parse-history)
-
+;(add-hook 'rt-liber-viewer-hook 'rt-liber-ticket-parse-history)
 
 (provide 'rt-liberation-ticket-viewer)
 ;;; rt-liberation-ticket-viewer.el ends here

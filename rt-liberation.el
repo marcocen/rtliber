@@ -407,13 +407,33 @@ AFTER  date after predicate."
 	     (re-search-forward "^id:" (point-max) t))
       (while (and continue
 		  (re-search-forward
-		   "^\\(\\([\.{} #[:alpha:]]+\\): \\(.*\\)\\)$\\|^--$"
+		   "^\\(\\([\.{}#[:alpha:]]+\\): \\(.*\\)\\)$\\|^--$"
 		   (point-max) t))
-	(if (string= (match-string-no-properties 0) "--")
-	    (setq continue nil)
-	  (push (cons (match-string-no-properties 2)
-		      (match-string-no-properties 3))
-		ticketbase)))
+	(cond
+	 ((string= (match-string-no-properties 0) "--")
+	    (setq continue nil))
+	 ((string= (match-string-no-properties 2) "Requestors")
+	  (let* ((start
+		  (save-excursion
+		    (beginning-of-line)
+		    (re-search-forward "Requestors: " (point-max) t)
+		    (point)))
+		 (requestors (concat
+			    "       "
+			    (buffer-substring-no-properties
+			     start
+			     (or (progn (re-search-forward
+					 "^[\.{}#[:alpha:]]+:"
+					 (point-max) t)
+					(beginning-of-line)
+					(point))
+				 (point-max))))))
+	    (push (cons "Requestors" (replace-regexp-in-string "\n" " " (replace-regexp-in-string "^[ ]+" "" requestors)))
+	 	  ticketbase)))
+	 (t
+	   (push (cons (match-string-no-properties 2)
+		       (match-string-no-properties 3))
+		 ticketbase))))
       (push (copy-seq ticketbase) ticketbase-list)
       (setq ticketbase nil
 	    continue t))
@@ -650,6 +670,7 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 	  (set
 	   (make-local-variable 'rt-liber-assoc-browser)
 	   assoc-browser))
+	(rt-liber-ticket-parse-history ticket-alist)
 	(set-buffer-modified-p nil)
 	(setq buffer-read-only t)))
     (switch-to-buffer new-ticket-buffer)))
