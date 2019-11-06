@@ -43,7 +43,7 @@
 	 (owner      (rt-liber-ticket-owner-only ticket-alist))
 	 (requestors (cdr (assoc "Requestors" ticket-alist)))
 	 (cc    (cdr (assoc "CC" ticket-alist)))
-	 (admincc    (cdr (assoc "AdminCC" ticket-alist)))
+	 (admincc    (cdr (assoc "AdminCc" ticket-alist)))
 	 ; Dates
 	 (created    (format-time-string
 		      rt-liber-browser-time-format-string
@@ -59,8 +59,8 @@
 			  (date-to-time
 			   (cdr (assoc "Resolved" ticket-alist))))
 		       "N/A")))
-    (concat (rt-liber-ticker-viewer-highlight-string (concat "#" id ": " subject))
-	    "Basics:\n"
+    (concat (rt-liber-ticker-viewer-highlight-string (concat "#" id ": " subject "\n"))
+	    "\nBasics:\n"
 	    "     Status: " status "\n"
 	    "      Queue: " queue "\n"
 
