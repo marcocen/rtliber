@@ -685,74 +685,74 @@ ASSOC-BROWSER if non-nil should be a ticket browser."
 ;; wrapper functions around specific functions provided by a backend
 
 (declare-function
- rt-liber-gnus-compose-reply-to-requestor
- "rt-liberation-gnus.el")
+ rt-liber-mail-compose-reply-to-requestor
+ "rt-liberation-mail.el")
 (declare-function
- rt-liber-gnus-compose-reply-to-requestor-to-this
- "rt-liberation-gnus.el")
+ rt-liber-mail-compose-reply-to-requestor-to-this
+ "rt-liberation-mail.el")
 (declare-function
- rt-liber-gnus-compose-reply-to-requestor-verbatim-this
- "rt-liberation-gnus.el")
+ rt-liber-mail-compose-reply-to-requestor-verbatim-this
+ "rt-liberation-mail.el")
 (declare-function
- rt-liber-gnus-compose-provisional
- "rt-liberation-gnus.el")
+ rt-liber-mail-compose-provisional
+ "rt-liberation-mail.el")
 (declare-function
- rt-liber-gnus-compose-provisional-to-this
- "rt-liberation-gnus.el")
+ rt-liber-mail-compose-provisional-to-this
+ "rt-liberation-mail.el")
 (declare-function
- rt-liber-gnus-compose-comment
- "rt-liberation-gnus.el")
+ rt-liber-mail-compose-comment
+ "rt-liberation-mail.el")
 (declare-function
- rt-liber-gnus-compose-comment-this
- "rt-liberation-gnus.el")
+ rt-liber-mail-compose-comment-this
+ "rt-liberation-mail.el")
 
 (defun rt-liber-viewer-answer ()
   "Answer the ticket."
   (interactive)
-  (cond ((featurep 'rt-liberation-gnus)
-	 (rt-liber-gnus-compose-reply-to-requestor))
+  (cond ((featurep 'rt-liberation-mail)
+	 (rt-liber-mail-compose-reply-to-requestor))
 	(t (error "no function defined"))))
 
 (defun rt-liber-viewer-answer-this ()
   "Answer the ticket using the current context."
   (interactive)
-  (cond ((featurep 'rt-liberation-gnus)
-	 (rt-liber-gnus-compose-reply-to-requestor-to-this))
+  (cond ((featurep 'rt-liberation-mail)
+	 (rt-liber-mail-compose-reply-to-requestor-to-this))
 	(t (error "no function defined"))))
 
 (defun rt-liber-viewer-answer-verbatim-this ()
   "Answer the ticket using the current context verbatim."
   (interactive)
-  (cond ((featurep 'rt-liberation-gnus)
-	 (rt-liber-gnus-compose-reply-to-requestor-verbatim-this))
+  (cond ((featurep 'rt-liberation-mail)
+	 (rt-liber-mail-compose-reply-to-requestor-verbatim-this))
 	(t (error "no function defined"))))
 
 (defun rt-liber-viewer-answer-provisionally ()
   "Provisionally answer the ticket."
   (interactive)
-  (cond ((featurep 'rt-liberation-gnus)
-	 (rt-liber-gnus-compose-provisional))
+  (cond ((featurep 'rt-liberation-mail)
+	 (rt-liber-mail-compose-provisional))
 	(t (error "no function defined"))))
 
 (defun rt-liber-viewer-answer-provisionally-this ()
   "Provisionally answer the ticket using the current context."
   (interactive)
-  (cond ((featurep 'rt-liberation-gnus)
-	 (rt-liber-gnus-compose-provisional-to-this))
+  (cond ((featurep 'rt-liberation-mail)
+	 (rt-liber-mail-compose-provisional-to-this))
 	(t (error "no function defined"))))
 
 (defun rt-liber-viewer-comment ()
   "Comment on the ticket."
   (interactive)
-  (cond ((featurep 'rt-liberation-gnus)
-	 (rt-liber-gnus-compose-comment))
+  (cond ((featurep 'rt-liberation-mail)
+	 (rt-liber-mail-compose-comment))
 	(t (error "no function defined"))))
 
 (defun rt-liber-viewer-comment-this ()
   "Comment on the ticket using the current context."
   (interactive)
-  (cond ((featurep 'rt-liberation-gnus)
-	 (rt-liber-gnus-compose-comment-this))
+  (cond ((featurep 'rt-liberation-mail)
+	 (rt-liber-mail-compose-comment-this))
 	(t (error "no function defined"))))
 
 

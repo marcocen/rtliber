@@ -1,8 +1,10 @@
-;;; rt-liberation-gnus.el --- Gnus integration for rt-liberation
+;;; rt-liberation-mail.el --- Mail integration for rt-liberation
 
 ;; Copyright (C) 2009, 2012, 2014 Yoni Rabkin
+;;               2021 Marco Centurión
 ;;
 ;; Authors: Yoni Rabkin <yrk@gnu.org>
+;;          Marco Centurión <mcenturion@fing.edu.uy>
 ;;
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -25,55 +27,53 @@
 ;; wonderful rt-liberation manual located in the "doc/" directory of
 ;; the rt-liberation distribution.
 
-(defgroup rt-liber-gnus nil
-  "*Gnus integration for rt-liberation."
-  :prefix "rt-liber-gnus-"
-  :group 'rt-liber-gnus)
+(defgroup rt-liber-mail nil
+  "*Mail integration for rt-liberation."
+  :prefix "rt-liber-mail-"
+  :group 'rt-liber-mail)
 
-(defcustom rt-liber-gnus-comment-address "no comment address set"
+(defcustom rt-liber-mail-comment-address "no comment address set"
   "*Email address for adding a comment."
   :type 'string
-  :group 'rt-liber-gnus)
+  :group 'rt-liber-mail)
 
-(defcustom rt-liber-gnus-address "no reply address set"
+(defcustom rt-liber-mail-address "no reply address set"
   "*Email address for replying to requestor."
   :type 'string
-  :group 'rt-liber-gnus)
+  :group 'rt-liber-mail)
 
-(defcustom rt-liber-gnus-subject-name "no subject name set"
+(defcustom rt-liber-mail-subject-name "no subject name set"
   "*Subject name to be included in email header."
   :type 'string
-  :group 'rt-liber-gnus)
+  :group 'rt-liber-mail)
 
-(defcustom rt-liber-gnus-provisional-tag "PROVISIONAL"
+(defcustom rt-liber-mail-provisional-tag "PROVISIONAL"
   "*Subject line text for a provisional response."
   :type 'string
-  :group 'rt-liber-gnus)
+  :group 'rt-liber-mail)
 
-(defcustom rt-liber-gnus-delayed-response-text
+(defcustom rt-liber-mail-delayed-response-text
   "Please accept my apologies for the late reply."
   "*Text for a belated reply."
   :type 'string
-  :group 'rt-liber-gnus)
+  :group 'rt-liber-mail)
 
-(defcustom rt-liber-gnus-subject-regexp
+(defcustom rt-liber-mail-subject-regexp
   ""
   "Regular expression to capture the ticket number in the subject
 line of an email. For example: \\[company.com #\\([0-9].+?\\)\\]"
   :type 'string
-  :group 'rt-liber-gnus)
+  :group 'rt-liber-mail)
 
 (require 'rt-liberation)
 (require 'nnir)
-(require 'gnus-msg)
+
+(defvar rt-liber-mail-p nil
+  "Non-nil when rt-liberation-mail is composing a mail buffer.")
 
 
-(defvar rt-liber-gnus-p nil
-  "Non-nil when rt-liberation-gnus is composing a Gnus buffer.")
-
-
-(defun rt-liber-gnus-compose (addr ticket-alist options)
-  "Create a Gnus *mail* buffer for the RT email interface.
+(defun rt-liber-mail-compose (addr ticket-alist options)
+  "Create a *mail* buffer for the RT email interface.
 ADDR email address.
 TICKET-ALIST association list of ticket properties.
 OPTIONS association list of options.
@@ -83,7 +83,7 @@ OPTIONS association list of options.
 	(top-matter       (cdr (assoc 'top-matter options)))
 	(contents         (cdr (assoc 'contents options)))
 	(no-comment       (cdr (assoc 'no-comment options)))
-	(rt-liber-gnus-p  t)
+	(rt-liber-mail-p  t)
 	message-text)
     ;; prepare the text
     (with-temp-buffer
@@ -94,26 +94,21 @@ OPTIONS association list of options.
 	;; (when (not no-comment)
 	;;   (comment-region start-of-comment (point-max))))
       (setq message-text (buffer-substring (point-min) (point-max)))))
-    ;; launch into gnus and prepare the mail message
-    (when (not (gnus-alive-p))
-      (error "Gnus has been shut down"))
-    (gnus-setup-message 'message
-      (message-mail
-       addr
-       (format "[%s #%s] %s"
-	       rt-liber-gnus-subject-name
-	       (rt-liber-ticket-id-only ticket-alist)
-	       (cond (suppress-subject "")
-		     (provisional rt-liber-gnus-provisional-tag)
-		     (t (rt-liber-format "Re: %s" ticket-alist))))
-       nil
-       'switch-to-buffer))
+    ;; launch into a mail compose buffer
+    (compose-mail addr
+		  (format "[%s #%s] %s"
+			  rt-liber-mail-subject-name
+			  (rt-liber-ticket-id-only ticket-alist)
+			  (cond (suppress-subject "")
+				(provisional rt-liber-mail-provisional-tag)
+				(t (rt-liber-format "Re: %s" ticket-alist))))
+		  nil nil nil nil nil 'switch-to-buffer)
     (save-excursion
       (insert message-text))))
 
-;; (defun rt-liber-gnus-content-to-string ()
+;; (defun rt-liber-mail-content-to-string ()
 ;;   "Return the current content section as a string"
-;;   (rt-liber-gnus-with-ticket-buffer
+;;   (rt-liber-mail-with-ticket-buffer
 ;;    (goto-char (point-at-eol))
 ;;    (when
 ;;        (not
@@ -139,10 +134,10 @@ OPTIONS association list of options.
 ;; 	 (setq text (buffer-substring (point-min) (point-max))))
 ;;        text))))
 
-(defun rt-liber-gnus-content-to-string ()
+(defun rt-liber-mail-content-to-string ()
   "Return the current content section as a string"
   ;; TODO: This is sooo broken
-  (rt-liber-gnus-with-ticket-buffer
+  (rt-liber-mail-with-ticket-buffer
    (goto-char (point-at-eol))
    (when
        (not
@@ -182,86 +177,86 @@ OPTIONS association list of options.
        text))))
 
 
-(defmacro rt-liber-gnus-with-ticket-buffer (&rest body)
+(defmacro rt-liber-mail-with-ticket-buffer (&rest body)
   `(progn
      (when (not (boundp 'rt-liber-ticket-local))
        (error "rt-liberation ticket view buffer not present"))
      ,@body))
 
-(defun rt-liber-gnus-compose-reply-to-requestor ()
+(defun rt-liber-mail-compose-reply-to-requestor ()
   (interactive)
-  (rt-liber-gnus-with-ticket-buffer
-   (rt-liber-gnus-compose
-    rt-liber-gnus-address
+  (rt-liber-mail-with-ticket-buffer
+   (rt-liber-mail-compose
+    rt-liber-mail-address
     rt-liber-ticket-local
     nil)))
 
-(defun rt-liber-gnus-compose-reply-to-requestor-to-this ()
+(defun rt-liber-mail-compose-reply-to-requestor-to-this ()
   (interactive)
-  (rt-liber-gnus-with-ticket-buffer
-   (rt-liber-gnus-compose
-    rt-liber-gnus-address
+  (rt-liber-mail-with-ticket-buffer
+   (rt-liber-mail-compose
+    rt-liber-mail-address
     rt-liber-ticket-local
-    `((contents . ,(rt-liber-gnus-content-to-string))
+    `((contents . ,(rt-liber-mail-content-to-string))
       (top-matter . ,(if (rt-liber-ticket-old-p rt-liber-ticket-local)
-			 rt-liber-gnus-delayed-response-text
+			 rt-liber-mail-delayed-response-text
 		       nil))))))
 
-(defun rt-liber-gnus-compose-reply-to-requestor-verbatim-this ()
+(defun rt-liber-mail-compose-reply-to-requestor-verbatim-this ()
   (interactive)
-  (rt-liber-gnus-with-ticket-buffer
-   (rt-liber-gnus-compose
-    rt-liber-gnus-address
+  (rt-liber-mail-with-ticket-buffer
+   (rt-liber-mail-compose
+    rt-liber-mail-address
     rt-liber-ticket-local
-    `((contents . ,(rt-liber-gnus-content-to-string))
+    `((contents . ,(rt-liber-mail-content-to-string))
       (no-comment . t)))))
 
-(defun rt-liber-gnus-compose-provisional ()
+(defun rt-liber-mail-compose-provisional ()
   (interactive)
-  (rt-liber-gnus-with-ticket-buffer
-   (rt-liber-gnus-compose
-    rt-liber-gnus-comment-address
+  (rt-liber-mail-with-ticket-buffer
+   (rt-liber-mail-compose
+    rt-liber-mail-comment-address
     rt-liber-ticket-local
     '((provisional . t)))))
 
-(defun rt-liber-gnus-compose-provisional-to-this ()
+(defun rt-liber-mail-compose-provisional-to-this ()
   (interactive)
-  (rt-liber-gnus-with-ticket-buffer
-   (rt-liber-gnus-compose
-    rt-liber-gnus-comment-address
+  (rt-liber-mail-with-ticket-buffer
+   (rt-liber-mail-compose
+    rt-liber-mail-comment-address
     rt-liber-ticket-local
     `((provisional . t)
-      (contents . ,(rt-liber-gnus-content-to-string))
+      (contents . ,(rt-liber-mail-content-to-string))
       (top-matter . ,(if (rt-liber-ticket-old-p rt-liber-ticket-local)
-			 rt-liber-gnus-delayed-response-text
+			 rt-liber-mail-delayed-response-text
 		       nil))))))
 
-(defun rt-liber-gnus-compose-comment ()
+(defun rt-liber-mail-compose-comment ()
   (interactive)
-  (rt-liber-gnus-with-ticket-buffer
-   (rt-liber-gnus-compose
-    rt-liber-gnus-comment-address
+  (rt-liber-mail-with-ticket-buffer
+   (rt-liber-mail-compose
+    rt-liber-mail-comment-address
     rt-liber-ticket-local
     `((suppress-subject . t)
       (no-comment       . t)
       ))))
 
-(defun rt-liber-gnus-compose-comment-this ()
+(defun rt-liber-mail-compose-comment-this ()
   (interactive)
-  (rt-liber-gnus-with-ticket-buffer
-   (rt-liber-gnus-compose
-    rt-liber-gnus-comment-address
+  (rt-liber-mail-with-ticket-buffer
+   (rt-liber-mail-compose
+    rt-liber-mail-comment-address
     rt-liber-ticket-local
     `((suppress-subject . t)
-      (contents . ,(rt-liber-gnus-content-to-string))
+      (contents . ,(rt-liber-mail-content-to-string))
       ))))
 
-(defun rt-liber-gnus-visit-ticket-at-point ()
+(defun rt-liber-mail-visit-ticket-at-point ()
   "Call `rt-liber-display-ticket' on this ticket."
   (interactive)
   (save-excursion
     (goto-char (point-at-bol))
-    (re-search-forward rt-liber-gnus-subject-regexp (point-at-eol) nil))
+    (re-search-forward rt-liber-mail-subject-regexp (point-at-eol) nil))
   (let ((match (match-string-no-properties 1)))
     (when (not match)
       (error "no ticket number found in subject line"))
@@ -269,6 +264,6 @@ OPTIONS association list of options.
      (rt-liber-compile-query
       (id match)))))
 
-(provide 'rt-liberation-gnus)
+(provide 'rt-liberation-mail)
 
-;;; rt-liberation-gnus.el ends here.
+;;; rt-liberation-mail.el ends here.
