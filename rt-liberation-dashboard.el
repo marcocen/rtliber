@@ -81,13 +81,15 @@
 
 (defun rt-liber-dash-insert-ticket-link (id subject)
   "Insert a link to view the ticket with ID history"
-    (magit-insert-section (ticket nil t)
-      (widget-create 'link
-		     :notify `(lambda (&rest ignore)
-				(rt-liber-dash-browse-ticket-by-id ',id))
-		     :button-prefix ""
-		     :button-suffix ""
-		     (format "[#%s] %s\n" id subject))))
+  (magit-insert-section (ticket nil t)
+    (widget-create 'link
+		   :notify `(lambda (&rest ignore)
+			      (rt-liber-dash-browse-ticket-by-id ',id))
+		   :button-face "bold"
+		   :button-prefix ""
+		   :button-suffix ""
+		   (format "  [#%s] %s" id subject))
+    (widget-insert "\n")))
 
 
 (defun rt-liber-dash-insert-queues ()
