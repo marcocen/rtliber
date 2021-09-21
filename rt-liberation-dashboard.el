@@ -51,6 +51,9 @@
   "Create a dashboard with saved rt-liberation queries."
   (interactive)
   (switch-to-buffer "*RT Dashboard*")
+  (setq-local revert-buffer-function
+	      '(lambda (&optional ignore-auto noconfirm)
+		(rt-liber-dashboard)))
   (let ((magit-insert-section--parent magit-root-section)
 	(inhibit-read-only t))
     (erase-buffer)
