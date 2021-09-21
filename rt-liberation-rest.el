@@ -75,14 +75,15 @@
       (goto-char (point-max))
       (insert str))))
 
-(defun rt-liber-rest-search-string (scheme url query)
+(defun rt-liber-rest-search-string (scheme url query &optional f)
   "Return the search query string."
+  (or f (setq f "i"))
   (concat scheme
 	  "://"
 	  url
 	  "/REST/1.0/search/ticket" "?"
 	  "query=" (url-encode-url query) "&"
-	  "format=i" "&"
+	  (format "format=%s" f) "&"
 	  "orderby=+Created"))
 
 (defun rt-liber-rest-show-string (scheme url ticket-id-list query)
@@ -109,6 +110,16 @@
 	  url
 	  "/REST/1.0/ticket/" ticket-id
 	  "/edit"))
+
+(defun rt-liber-rest-search-string-with-subject (scheme url query)
+  "Return the search query string."
+  (concat scheme
+	  "://"
+	  url
+	  "/REST/1.0/search/ticket" "?"
+	  "query=" (url-encode-url query) "&"
+	  "format=s" "&"
+	  "orderby=+Created"))
 
 (defun rt-liber-rest-get-auth-source-secret (username)
   "Returns the password for USERNAME, using auth-source."
@@ -150,7 +161,7 @@
     (kill-buffer response)
     str))
 
-(defun rt-liber-rest-query-runner (op query-string)
+(defun rt-liber-rest-query-runner (op query-string &optional f)
   "Run OP on QUERY-STRING."
   (when (or (not (stringp op))
 	    (not (stringp query-string)))
@@ -159,7 +170,8 @@
 	 (rt-liber-rest-call
 	  (rt-liber-rest-search-string rt-liber-rest-scheme
 				       rt-liber-rest-url
-				       query-string)
+				       query-string
+				       f)
 	  rt-liber-rest-username))
 	((string= op "show")
 	 (rt-liber-rest-call
@@ -174,6 +186,13 @@
 					rt-liber-rest-url
 					query-string)
 	  rt-liber-rest-username))
+	((string= op "subjects")
+	 (rt-liber-rest-call
+	  (rt-liber-rest-search-string rt-liber-rest-scheme
+				       rt-liber-rest-url
+				       query-string
+				       "s")
+	  rt-liber-rest-username))
 	(t (error "unknown op [%s]" op))))
 
 (defun rt-liber-rest-parse-http-header ()
@@ -185,6 +204,18 @@
 	  (re-search-forward http-ok-regexp (point-max))
 	  (re-search-forward rt-ok-regexp (point-max)))
       (error "bad HTTP response from server"))))
+
+(defun rt-liber-rest-ticketsql-runner-subject-parser-f ()
+  "Parser function for a textual list of tickets with subjects."
+  (let (idsub-list)
+    (rt-liber-rest-parse-http-header)
+    (while (re-search-forward "\\([0-9].+\\): \\(.*\\)" (point-max) t)
+      ;; the output should be compatible with the input to
+      ;; `rt-liber-create-tickets-string'
+      (push (list (match-string-no-properties 1)
+		  (match-string-no-properties 2))
+	    idsub-list))
+    idsub-list))
 
 (defun rt-liber-rest-ticketsql-runner-parser-f ()
   "Parser function for a textual list of tickets."
@@ -203,6 +234,12 @@
   (rt-liber-parse-answer
    (rt-liber-rest-query-runner "ls" query)
    'rt-liber-rest-ticketsql-runner-parser-f))
+
+(defun rt-liber-rest-run-subject-query (query)
+  "Run an \"ls\" type query against the server with QUERY with subjects."
+  (rt-liber-parse-answer
+   (rt-liber-rest-query-runner "ls" query "s")
+   'rt-liber-rest-ticketsql-runner-subject-parser-f))
 
 (defun rt-liber-rest-show-process (response)
   "Process and return the show query response."
