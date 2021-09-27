@@ -209,7 +209,7 @@
   "Parser function for a textual list of tickets with subjects."
   (let (idsub-list)
     (rt-liber-rest-parse-http-header)
-    (while (re-search-forward "\\([0-9].+\\): \\(.*\\)" (point-max) t)
+    (while (re-search-forward "\\([0-9]+\\): \\(.*\\)" (point-max) t)
       ;; the output should be compatible with the input to
       ;; `rt-liber-create-tickets-string'
       (push (list (match-string-no-properties 1)
